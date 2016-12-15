@@ -114,24 +114,23 @@ class AdversarialModel(Model):
         if not hasattr(self, 'train_function'):
             raise Exception('You must compile your model before using it.')
         if self.train_function is None:
-            updates = self.adversarial_optimizer.call([model.total_loss for model in self.layers],
-                                                      self.player_params,
-                                                      self.optimizers,
-                                                      [model.constraints for model in self.layers])
-
             inputs = self.inputs + self.targets + self.sample_weights
             if self.uses_learning_phase and not isinstance(K.learning_phase(), int):
                 inputs += [K.learning_phase()]
-            # returns loss and metrics. Updates weights at each call.
             outputs = [self.total_loss] + \
                       list(itertools.chain.from_iterable(
                           [model.total_loss] + model.metrics_tensors
                           for model in self.layers))
 
-            self.train_function = K.function(inputs,
-                                             outputs,
-                                             updates=updates,
-                                             **self._function_kwargs)
+            # returns loss and metrics. Updates weights at each call.
+            self.train_function = self.adversarial_optimizer.make_train_function(inputs, outputs,
+                                                                  [model.total_loss for model in self.layers],
+                                                                  self.player_params,
+                                                                  self.optimizers,
+                                                                  [model.constraints for model in self.layers],
+                                                                  self._function_kwargs)
+
+
 
     def _make_test_function(self):
         if not hasattr(self, 'test_function'):

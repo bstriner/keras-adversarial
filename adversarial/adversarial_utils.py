@@ -30,12 +30,33 @@ def eliminate_z(gan, latent_sampling):
     model = Model(x, fix_names(gan([z, x]), gan.output_names), name=gan.name)
     return model
 
+
 def simple_gan(generator, discriminator, latent_sampling):
-    #build basic gan
+    # build basic gan
     gan = build_gan(generator, discriminator)
     # generate z on gpu, eliminate one input
     gan = eliminate_z(gan, latent_sampling)
     return gan
+
+
+def simple_bigan(generator, encoder, discriminator, latent_sampling):
+    """
+    Construct BiGRAN.
+    :param generator: model z->x
+    :param encoder: model x->z
+    :param discriminator: model z,x->y (z must be first)
+    :param latent_sampling: layer for sampling from latent space
+    :return:
+    """
+    zfake = latent_sampling(discriminator.inputs[1])
+    xreal = discriminator.inputs[1]
+    xfake = generator(zfake)
+    zreal = encoder(xreal)
+    yfake = discriminator([zfake, xfake])
+    yreal = discriminator([zreal, xreal])
+    bigan = Model(xreal, fix_names([yfake, yreal], ["yfake", "yreal"]), name="bigan")
+    return bigan
+
 
 def fix_names(outputs, names):
     if not isinstance(outputs, list):
@@ -43,6 +64,7 @@ def fix_names(outputs, names):
     if not isinstance(names, list):
         names = [names]
     return [Activation('linear', name=name)(output) for output, name in zip(outputs, names)]
+
 
 def gan_targets(n):
     """
@@ -66,3 +88,7 @@ def normal_latent_sampling(latent_shape):
     """
     return Lambda(lambda x: K.random_normal((x.shape[0],) + latent_shape),
                   output_shape=lambda x: ((x[0],) + latent_shape))
+
+
+def n_choice(x, n):
+    return x[np.random.choice(x.shape[0], size=n, replace=False)]

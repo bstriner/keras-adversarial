@@ -2,7 +2,7 @@ from keras.callbacks import Callback
 from image_grid import write_image_grid
 
 
-class GenerateSamplesCallback(Callback):
+class ImageGridCallback(Callback):
     def __init__(self, image_path, generator):
         self.image_path = image_path
         self.generator = generator
