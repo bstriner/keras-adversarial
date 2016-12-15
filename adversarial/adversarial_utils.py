@@ -1,0 +1,68 @@
+from keras.layers import Activation, Lambda
+import numpy as np
+import keras.backend as K
+from keras.models import Model
+
+
+def build_gan(generator, discriminator, name="gan"):
+    """
+    Build GAN from generator and discriminator
+    Model is (z, x) -> (yfake, yreal)
+    :param generator: Model (z -> x)
+    :param discriminator: Model (x -> y)
+    :return: GAN model
+    """
+    yfake = Activation("linear", name="yfake")(discriminator(generator(generator.inputs)))
+    yreal = Activation("linear", name="yreal")(discriminator(discriminator.inputs))
+    model = Model(generator.inputs + discriminator.inputs, [yfake, yreal], name=name)
+    return model
+
+
+def eliminate_z(gan, latent_sampling):
+    """
+    Eliminate z from GAN using latent_sampling
+    :param gan: model with 2 inputs: z, x
+    :param latent_sampling: layer that samples z with same batch size as x
+    :return: Model x -> gan(latent_sampling(x), x)
+    """
+    x = gan.inputs[1]
+    z = latent_sampling(x)
+    model = Model(x, fix_names(gan([z, x]), gan.output_names), name=gan.name)
+    return model
+
+def simple_gan(generator, discriminator, latent_sampling):
+    #build basic gan
+    gan = build_gan(generator, discriminator)
+    # generate z on gpu, eliminate one input
+    gan = eliminate_z(gan, latent_sampling)
+    return gan
+
+def fix_names(outputs, names):
+    if not isinstance(outputs, list):
+        outputs = [outputs]
+    if not isinstance(names, list):
+        names = [names]
+    return [Activation('linear', name=name)(output) for output, name in zip(outputs, names)]
+
+def gan_targets(n):
+    """
+    Standard training targets
+    [generator_fake, generator_real, discriminator_fake, discriminator_real] = [1, 0, 0, 1]
+    :param n: number of samples
+    :return: array of targets
+    """
+    generator_fake = np.ones((n, 1))
+    generator_real = np.zeros((n, 1))
+    discriminator_fake = np.zeros((n, 1))
+    discriminator_real = np.ones((n, 1))
+    return [generator_fake, generator_real, discriminator_fake, discriminator_real]
+
+
+def normal_latent_sampling(latent_shape):
+    """
+    Sample from normal distribution
+    :param latent_shape: batch shape
+    :return: normal samples, shape=(n,)+latent_shape
+    """
+    return Lambda(lambda x: K.random_normal((x.shape[0],) + latent_shape),
+                  output_shape=lambda x: ((x[0],) + latent_shape))
