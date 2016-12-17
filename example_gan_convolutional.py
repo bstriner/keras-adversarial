@@ -24,13 +24,15 @@ def dim_ordering_fix(x):
     if K.image_dim_ordering() == 'th':
         return x
     else:
-        return np.transpose((0,2,3,1))
+        return np.transpose((0, 2, 3, 1))
+
 
 def dim_ordering_unfix(x):
     if K.image_dim_ordering() == 'th':
         return x
     else:
-        return np.transpose((0,3,1,2))
+        return np.transpose((0, 3, 1, 2))
+
 
 def dim_ordering_input(input_shape, name):
     if K.image_dim_ordering() == 'th':
@@ -39,18 +41,25 @@ def dim_ordering_input(input_shape, name):
         return Input((input_shape[1], input_shape[2], input_shape[0]), name=name)
 
 
+def dim_ordering_reshape(k, w, **kwargs):
+    if K.image_dim_ordering() == 'th':
+        return Reshape((k, w, w), **kwargs)
+    else:
+        return Reshape((w, w, k), **kwargs)
+
+
 def model_generator():
     nch = 256
     g_input = Input(shape=[100])
     H = Dense(nch * 14 * 14, init='glorot_normal')(g_input)
     H = BatchNormalization(mode=2)(H)
     H = Activation('relu')(H)
-    H = Reshape([nch, 14, 14])(H)
+    H = dim_ordering_reshape(nch, 14)(H)
     H = UpSampling2D(size=(2, 2))(H)
-    H = Convolution2D(nch/2, 3, 3, border_mode='same', init='glorot_uniform')(H)
+    H = Convolution2D(nch / 2, 3, 3, border_mode='same', init='glorot_uniform')(H)
     H = BatchNormalization(mode=2)(H)
     H = Activation('relu')(H)
-    H = Convolution2D(nch/4, 3, 3, border_mode='same', init='glorot_uniform')(H)
+    H = Convolution2D(nch / 4, 3, 3, border_mode='same', init='glorot_uniform')(H)
     H = BatchNormalization(mode=2)(H)
     H = Activation('relu')(H)
     H = Convolution2D(1, 1, 1, border_mode='same', init='glorot_uniform')(H)
@@ -61,15 +70,15 @@ def model_generator():
 def model_discriminator(input_shape=(1, 28, 28), dropout_rate=0.5):
     d_input = dim_ordering_input(input_shape, name="input_x")
     nch = 512
-    #nch = 128
-    H = Convolution2D(nch/2, 5, 5, subsample=(2, 2), border_mode='same', activation='relu')(d_input)
+    # nch = 128
+    H = Convolution2D(nch / 2, 5, 5, subsample=(2, 2), border_mode='same', activation='relu')(d_input)
     H = LeakyReLU(0.2)(H)
     H = Dropout(dropout_rate)(H)
     H = Convolution2D(nch, 5, 5, subsample=(2, 2), border_mode='same', activation='relu')(H)
     H = LeakyReLU(0.2)(H)
     H = Dropout(dropout_rate)(H)
     H = Flatten()(H)
-    H = Dense(nch/2)(H)
+    H = Dense(nch / 2)(H)
     H = LeakyReLU(0.2)(H)
     H = Dropout(dropout_rate)(H)
     d_V = Dense(1, activation='sigmoid')(H)
