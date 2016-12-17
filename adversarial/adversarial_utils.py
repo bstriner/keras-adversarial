@@ -86,7 +86,7 @@ def normal_latent_sampling(latent_shape):
     :param latent_shape: batch shape
     :return: normal samples, shape=(n,)+latent_shape
     """
-    return Lambda(lambda x: K.random_normal((x.shape[0],) + latent_shape),
+    return Lambda(lambda x: K.random_normal((K.shape(x)[0],) + latent_shape),
                   output_shape=lambda x: ((x[0],) + latent_shape))
 
 
