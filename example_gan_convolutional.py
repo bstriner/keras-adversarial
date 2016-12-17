@@ -20,6 +20,18 @@ def leaky_relu(x):
     return K.relu(x, 0.2)
 
 
+def dim_ordering_fix(x):
+    if K.image_dim_ordering() == 'th':
+        return x
+    else:
+        return np.transpose((0,2,3,1))
+
+def dim_ordering_unfix(x):
+    if K.image_dim_ordering() == 'th':
+        return x
+    else:
+        return np.transpose((0,3,1,2))
+
 def model_generator():
     nch = 256
     g_input = Input(shape=[100])
@@ -97,14 +109,15 @@ if __name__ == "__main__":
     # train model
     def generator_sampler():
         zsamples = np.random.normal(size=(10 * 10, latent_dim))
+        gen = dim_ordering_unfix(generator.predict(zsamples))
         return generator.predict(zsamples).reshape((10, 10, 28, 28))
 
 
     generator_cb = ImageGridCallback("output/gan_convolutional/epoch-{:03d}.png", generator_sampler)
 
     xtrain, xtest = mnist_data()
-    xtrain = xtrain.reshape((-1, 1, 28, 28))
-    xtest = xtest.reshape((-1, 1, 28, 28))
+    xtrain = dim_ordering_fix(xtrain.reshape((-1, 1, 28, 28)))
+    xtest = dim_ordering_fix(xtest.reshape((-1, 1, 28, 28)))
     y = gan_targets(xtrain.shape[0])
     ytest = gan_targets(xtest.shape[0])
     history = model.fit(x=xtrain, y=y, validation_data=(xtest, ytest), callbacks=[generator_cb], nb_epoch=100,
