@@ -22,6 +22,7 @@ def model_generator(latent_dim, input_shape, hidden_dim=256, activation=leaky_re
     return Sequential([
         Dense(hidden_dim, name="generator_h1", input_dim=latent_dim, activation=activation, W_regularizer=reg()),
         Dense(hidden_dim, name="generator_h2", activation=activation, W_regularizer=reg()),
+        Dense(hidden_dim, name="generator_h3", activation=activation, W_regularizer=reg()),
         Dense(np.prod(input_shape), name="generator_x_flat", activation="sigmoid", W_regularizer=reg()),
         Reshape(input_shape, name="generator_x")],
         name="generator")

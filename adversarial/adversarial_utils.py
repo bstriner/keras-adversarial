@@ -96,7 +96,7 @@ def uniform_latent_sampling(latent_shape, low=0.0, high=1.0):
     :param latent_shape: batch shape
     :return: normal samples, shape=(n,)+latent_shape
     """
-    return Lambda(lambda x: K.random_uniform((x.shape[0],) + latent_shape, low, high),
+    return Lambda(lambda x: K.random_uniform((K.shape(x)[0],) + latent_shape, low, high),
                   output_shape=lambda x: ((x[0],) + latent_shape))
 
 
