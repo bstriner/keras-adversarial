@@ -32,6 +32,13 @@ def dim_ordering_unfix(x):
     else:
         return np.transpose((0,3,1,2))
 
+def dim_ordering_input(input_shape, name):
+    if K.image_dim_ordering() == 'th':
+        return Input(input_shape, name=name)
+    else:
+        return Input((input_shape[1], input_shape[2], input_shape[0]), name=name)
+
+
 def model_generator():
     nch = 256
     g_input = Input(shape=[100])
@@ -52,7 +59,7 @@ def model_generator():
 
 
 def model_discriminator(input_shape=(1, 28, 28), dropout_rate=0.5):
-    d_input = Input(shape=input_shape)
+    d_input = dim_ordering_input(input_shape, name="input_x")
     nch = 512
     #nch = 128
     H = Convolution2D(nch/2, 5, 5, subsample=(2, 2), border_mode='same', activation='relu')(d_input)
@@ -88,7 +95,7 @@ if __name__ == "__main__":
     # generator (z -> x)
     generator = model_generator()
     # discriminator (x -> y)
-    discriminator = model_discriminator()
+    discriminator = model_discriminator(input_shape=input_shape)
     # gan (x - > yfake, yreal), z generated on GPU
     gan = simple_gan(generator, discriminator, normal_latent_sampling((latent_dim,)))
 
