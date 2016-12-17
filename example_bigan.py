@@ -14,10 +14,19 @@ import numpy as np
 
 from adversarial import AdversarialModel, ImageGridCallback, simple_gan, gan_targets, fix_names, n_choice, simple_bigan
 from adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling, AdversarialOptimizerAlternating
-from example_gan import model_generator, mnist_data
+from example_gan import mnist_data
 
 
-def model_encoder(latent_dim, input_shape, hidden_dim=512, activation="tanh", reg=lambda: l1(1e-7)):
+def model_generator(latent_dim, input_shape, hidden_dim=512, activation="tanh", reg=lambda: l1(1e-5)):
+    return Sequential([
+        Dense(hidden_dim, name="generator_h1", input_dim=latent_dim, activation=activation, W_regularizer=reg()),
+        Dense(hidden_dim, name="generator_h2", activation=activation, W_regularizer=reg()),
+        Dense(np.prod(input_shape), name="generator_x_flat", activation="sigmoid", W_regularizer=reg()),
+        Reshape(input_shape, name="generator_x")],
+        name="generator")
+
+
+def model_encoder(latent_dim, input_shape, hidden_dim=512, activation="tanh", reg=lambda: l1(1e-5)):
     x = Input(input_shape, name="x")
     h = Flatten()(x)
     h = Dense(hidden_dim, name="encoder_h1", activation=activation, W_regularizer=reg())(h)
@@ -29,8 +38,8 @@ def model_encoder(latent_dim, input_shape, hidden_dim=512, activation="tanh", re
     return Model(x, z, name="encoder")
 
 
-def model_discriminator(latent_dim, input_shape, output_dim=1, hidden_dim=256, activation="tanh",
-                        reg=lambda: l1l2(1e-5, 1e-5)):
+def model_discriminator(latent_dim, input_shape, output_dim=1, hidden_dim=512, activation="tanh",
+                        reg=lambda: l1l2(1e-3, 1e-3)):
     z = Input((latent_dim,))
     x = Input(input_shape, name="x")
     h = merge([z, Flatten()(x)], mode='concat')
@@ -68,10 +77,10 @@ if __name__ == "__main__":
 
     # build adversarial model
     model = AdversarialModel(base_model=bigan,
-                             player_params=[generator.trainable_weights, discriminator.trainable_weights],
+                             player_params=[generative_params, discriminator.trainable_weights],
                              player_names=["generator", "discriminator"])
     model.adversarial_compile(adversarial_optimizer=AdversarialOptimizerSimultaneous(),
-                              player_optimizers=[Adam(1e-4, decay=1e-4), Adam(1e-3, decay=1e-4)],
+                              player_optimizers=[Adam(1e-4, decay=1e-4), Adam(3e-4, decay=1e-4)],
                               loss='binary_crossentropy')
 
     # train model
@@ -103,3 +112,7 @@ if __name__ == "__main__":
                         nb_epoch=50, batch_size=32)
     df = pd.DataFrame(history.history)
     df.to_csv("output/bigan/history.csv")
+
+    encoder.save("output/bigan/encoder.h5")
+    generator.save("output/bigan/generator.h5")
+    discriminator.save("output/bigan/discriminator.h5")

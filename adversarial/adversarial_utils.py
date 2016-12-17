@@ -41,7 +41,7 @@ def simple_gan(generator, discriminator, latent_sampling):
 
 def simple_bigan(generator, encoder, discriminator, latent_sampling):
     """
-    Construct BiGRAN.
+    Construct BiGRAN x -> yfake, yreal
     :param generator: model z->x
     :param encoder: model x->z
     :param discriminator: model z,x->y (z must be first)
@@ -87,6 +87,16 @@ def normal_latent_sampling(latent_shape):
     :return: normal samples, shape=(n,)+latent_shape
     """
     return Lambda(lambda x: K.random_normal((x.shape[0],) + latent_shape),
+                  output_shape=lambda x: ((x[0],) + latent_shape))
+
+
+def uniform_latent_sampling(latent_shape, low=0.0, high=1.0):
+    """
+    Sample from uniform distribution
+    :param latent_shape: batch shape
+    :return: normal samples, shape=(n,)+latent_shape
+    """
+    return Lambda(lambda x: K.random_uniform((x.shape[0],) + latent_shape, low, high),
                   output_shape=lambda x: ((x[0],) + latent_shape))
 
 
