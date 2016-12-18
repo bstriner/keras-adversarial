@@ -6,7 +6,8 @@ class AdversarialOptimizer(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def make_train_function(self, inputs, outputs, losses, params, optimizers, constraints, function_kwargs):
+    def make_train_function(self, inputs, outputs, losses, params, optimizers, constraints, model_updates,
+                            function_kwargs):
         """
         Construct function that updates weights and returns losses.
         :param inputs: function inputs
@@ -26,10 +27,11 @@ class AdversarialOptimizerSimultaneous(object):
     Perform simultaneous updates for each player in the game.
     """
 
-    def make_train_function(self, inputs, outputs, losses, params, optimizers, constraints, function_kwargs):
+    def make_train_function(self, inputs, outputs, losses, params, optimizers, constraints, model_updates,
+                            function_kwargs):
         return K.function(inputs,
                           outputs,
-                          updates=self.call(losses, params, optimizers, constraints),
+                          updates=self.call(losses, params, optimizers, constraints) + model_updates,
                           **function_kwargs)
 
     def call(self, losses, params, optimizers, constraints):
@@ -51,12 +53,13 @@ class AdversarialOptimizerAlternating(object):
         """
         self.reverse = reverse
 
-    def make_train_function(self, inputs, outputs, losses, params, optimizers, constraints, function_kwargs):
+    def make_train_function(self, inputs, outputs, losses, params, optimizers, constraints, model_updates,
+                            function_kwargs):
         funcs = []
         for loss, param, optimizer, constraint in zip(losses, params, optimizers, constraints):
             updates = optimizer.get_updates(param, constraint, loss)
             funcs.append(K.function(inputs, [], updates=updates, **function_kwargs))
-        output_func = K.function(inputs, outputs, **function_kwargs)
+        output_func = K.function(inputs, outputs, updates=model_updates, **function_kwargs)
         if self.reverse:
             funcs = funcs.reverse()
 

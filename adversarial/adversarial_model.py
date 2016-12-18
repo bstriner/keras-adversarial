@@ -107,6 +107,10 @@ class AdversarialModel(Model):
         return list(itertools.chain.from_iterable(model.constraints for model in self.layers))
 
     @property
+    def updates(self):
+        return list(itertools.chain.from_iterable(model.updates for model in self.layers))
+
+    @property
     def regularizers(self):
         return list(itertools.chain.from_iterable(model.regularizers for model in self.layers))
 
@@ -124,13 +128,14 @@ class AdversarialModel(Model):
 
             # returns loss and metrics. Updates weights at each call.
             self.train_function = self.adversarial_optimizer.make_train_function(inputs, outputs,
-                                                                  [model.total_loss for model in self.layers],
-                                                                  self.player_params,
-                                                                  self.optimizers,
-                                                                  [model.constraints for model in self.layers],
-                                                                  self._function_kwargs)
-
-
+                                                                                 [model.total_loss for model in
+                                                                                  self.layers],
+                                                                                 self.player_params,
+                                                                                 self.optimizers,
+                                                                                 [model.constraints for model in
+                                                                                  self.layers],
+                                                                                 self.updates,
+                                                                                 self._function_kwargs)
 
     def _make_test_function(self):
         if not hasattr(self, 'test_function'):
