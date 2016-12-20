@@ -3,7 +3,7 @@ from keras.models import Model
 from keras import optimizers, objectives
 import numpy as np
 import itertools
-from adversarial_utils import fix_names
+from adversarial_utils import fix_names, merge_updates
 
 
 class AdversarialModel(Model):
@@ -108,7 +108,11 @@ class AdversarialModel(Model):
 
     @property
     def updates(self):
-        return list(itertools.chain.from_iterable(model.updates for model in self.layers))
+        print "Updates!!!: %s" % str(self.base_model.updates)
+        print "Updates!!!: %s" % str(list(itertools.chain.from_iterable(model.updates for model in self.layers)))
+        print "Updates!!!: %s" % str(merge_updates(self.base_model.updates))
+        #return merge_updates(self.base_model.updates)
+        return merge_updates(list(itertools.chain.from_iterable(model.updates for model in self.layers)))
 
     @property
     def regularizers(self):

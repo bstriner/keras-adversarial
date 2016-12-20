@@ -102,3 +102,20 @@ def uniform_latent_sampling(latent_shape, low=0.0, high=1.0):
 
 def n_choice(x, n):
     return x[np.random.choice(x.shape[0], size=n, replace=False)]
+
+def merge_updates(updates):
+    """Average repeated updates of the same variable"""
+    upd = {}
+    for k,v in updates:
+        if k not in upd:
+            upd[k] = []
+        upd[k].append(v)
+    ret = []
+    for k,v in upd.iteritems():
+        n = len(v)
+        if n==1:
+            ret.append((k, v[0]))
+        else:
+            ret.append((k, sum(v)/n))
+    return ret
+
