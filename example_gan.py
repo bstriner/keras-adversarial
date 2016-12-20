@@ -15,16 +15,16 @@ from adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
 import os
 
 
-def model_generator(latent_dim, input_shape, hidden_dim=512, reg=lambda: l1(1e-5), batch_norm_mode=0):
+def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-5), batch_norm_mode=0):
     return Sequential([
         Dense(hidden_dim / 4, name="generator_h1", input_dim=latent_dim, W_regularizer=reg()),
-        #BatchNormalization(mode=batch_norm_mode),
+        # BatchNormalization(mode=batch_norm_mode),
         Activation('relu'),
         Dense(hidden_dim / 2, name="generator_h2", W_regularizer=reg()),
-        #BatchNormalization(mode=batch_norm_mode),
+        # BatchNormalization(mode=batch_norm_mode),
         Activation('relu'),
         Dense(hidden_dim, name="generator_h3", W_regularizer=reg()),
-        #BatchNormalization(mode=batch_norm_mode),
+        # BatchNormalization(mode=batch_norm_mode),
         Activation('relu'),
         Dense(np.prod(input_shape), name="generator_x_flat", W_regularizer=reg()),
         Activation('sigmoid'),
@@ -32,19 +32,19 @@ def model_generator(latent_dim, input_shape, hidden_dim=512, reg=lambda: l1(1e-5
         name="generator")
 
 
-def model_discriminator(input_shape, hidden_dim=512, reg=lambda: l1l2(1e-5, 1e-5), dropout=0.5, batch_norm_mode=1):
+def model_discriminator(input_shape, hidden_dim=1024, reg=lambda: l1l2(1e-5, 1e-5), dropout=0.5, batch_norm_mode=1):
     return Sequential([
         Flatten(name="discriminator_flatten", input_shape=input_shape),
         Dense(hidden_dim, name="discriminator_h1", W_regularizer=reg()),
-        #BatchNormalization(mode=batch_norm_mode),
+        # BatchNormalization(mode=batch_norm_mode),
         LeakyReLU(0.2),
         Dropout(dropout),
         Dense(hidden_dim / 2, name="discriminator_h2", W_regularizer=reg()),
-        #BatchNormalization(mode=batch_norm_mode),
+        # BatchNormalization(mode=batch_norm_mode),
         LeakyReLU(0.2),
         Dropout(dropout),
         Dense(hidden_dim / 4, name="discriminator_h3", W_regularizer=reg()),
-        #BatchNormalization(mode=batch_norm_mode),
+        # BatchNormalization(mode=batch_norm_mode),
         LeakyReLU(0.2),
         Dropout(dropout),
         Dense(1, name="discriminator_y", W_regularizer=reg()),
@@ -62,7 +62,7 @@ def mnist_data():
     return mnist_process(xtrain), mnist_process(xtest)
 
 
-def example_gan(adversarial_optimizer, path):
+def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch):
     # z \in R^100
     latent_dim = 100
     # x \in R^{28x28}
@@ -85,7 +85,7 @@ def example_gan(adversarial_optimizer, path):
                              player_params=[generator.trainable_weights, discriminator.trainable_weights],
                              player_names=["generator", "discriminator"])
     model.adversarial_compile(adversarial_optimizer=adversarial_optimizer,
-                              player_optimizers=[Adam(1e-4, decay=1e-4), Adam(1e-3, decay=1e-4)],
+                              player_optimizers=[opt_g, opt_d],
                               loss='binary_crossentropy')
 
     # train model
@@ -98,7 +98,7 @@ def example_gan(adversarial_optimizer, path):
     xtrain, xtest = mnist_data()
     y = gan_targets(xtrain.shape[0])
     ytest = gan_targets(xtest.shape[0])
-    history = model.fit(x=xtrain, y=y, validation_data=(xtest, ytest), callbacks=[generator_cb], nb_epoch=200,
+    history = model.fit(x=xtrain, y=y, validation_data=(xtest, ytest), callbacks=[generator_cb], nb_epoch=nb_epoch,
                         batch_size=32)
     df = pd.DataFrame(history.history)
     df.to_csv(os.path.join(path, "history.csv"))
@@ -108,4 +108,6 @@ def example_gan(adversarial_optimizer, path):
 
 
 if __name__ == "__main__":
-    example_gan(AdversarialOptimizerSimultaneous(), "output/gan")
+    example_gan(AdversarialOptimizerSimultaneous(), "output/gan",
+                Adam(1e-4, decay=1e-4),
+                Adam(1e-3, decay=1e-4))

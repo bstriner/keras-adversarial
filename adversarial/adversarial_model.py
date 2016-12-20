@@ -108,9 +108,9 @@ class AdversarialModel(Model):
 
     @property
     def updates(self):
-        print "Updates!!!: %s" % str(self.base_model.updates)
-        print "Updates!!!: %s" % str(list(itertools.chain.from_iterable(model.updates for model in self.layers)))
-        print "Updates!!!: %s" % str(merge_updates(self.base_model.updates))
+        #print "Updates: %s" % str(self.base_model.updates)
+        #print "Updates: %s" % str(list(itertools.chain.from_iterable(model.updates for model in self.layers)))
+        #print "Updates: %s" % str(merge_updates(self.base_model.updates))
         #return merge_updates(self.base_model.updates)
         return merge_updates(list(itertools.chain.from_iterable(model.updates for model in self.layers)))
 
