@@ -4,23 +4,19 @@ import matplotlib as mpl
 mpl.use('Agg')
 from example_gan import example_gan
 from unrolled import UnrolledAdversarialOptimizer
-from keras.optimizers import Adam
+from keras.optimizers import SGD
+
+
+def example_gan_unrolled(path, depth):
+    example_gan(UnrolledAdversarialOptimizer(depth=depth), path,
+                SGD(3e-4, decay=1e-4),
+                SGD(1e-4, decay=1e-4),
+                nb_epoch=50)
+
 
 if __name__ == "__main__":
-    nb_epoch = 20
-    example_gan(UnrolledAdversarialOptimizer(depth=0), "output/unrolled_gan/k_0",
-                Adam(1e-4, decay=1e-4),
-                Adam(1e-3, decay=1e-4),
-                nb_epoch)
-    example_gan(UnrolledAdversarialOptimizer(depth=1), "output/unrolled_gan/k_1",
-                Adam(1e-4, decay=1e-4),
-                Adam(1e-3, decay=1e-4),
-                nb_epoch)
-    example_gan(UnrolledAdversarialOptimizer(depth=2), "output/unrolled_gan/k_2",
-                Adam(1e-4, decay=1e-4),
-                Adam(1e-3, decay=1e-4),
-                nb_epoch)
-    example_gan(UnrolledAdversarialOptimizer(depth=10), "output/unrolled_gan/k_10",
-                Adam(1e-4, decay=1e-4),
-                Adam(1e-3, decay=1e-4),
-                nb_epoch)
+    example_gan_unrolled("output/unrolled_gan/k_0", 0)
+    example_gan_unrolled("output/unrolled_gan/k_1", 1)
+    example_gan_unrolled("output/unrolled_gan/k_2", 2)
+    example_gan_unrolled("output/unrolled_gan/k_4", 4)
+    example_gan_unrolled("output/unrolled_gan/k_8", 8)

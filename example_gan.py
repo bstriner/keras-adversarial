@@ -15,7 +15,7 @@ from adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
 import os
 
 
-def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-5), batch_norm_mode=0):
+def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-7), batch_norm_mode=0):
     return Sequential([
         Dense(hidden_dim / 4, name="generator_h1", input_dim=latent_dim, W_regularizer=reg()),
         # BatchNormalization(mode=batch_norm_mode),
@@ -32,7 +32,7 @@ def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-
         name="generator")
 
 
-def model_discriminator(input_shape, hidden_dim=1024, reg=lambda: l1l2(1e-5, 1e-5), dropout=0.5, batch_norm_mode=1):
+def model_discriminator(input_shape, hidden_dim=512, reg=lambda: l1l2(1e-7, 1e-7), dropout=0.5, batch_norm_mode=1):
     return Sequential([
         Flatten(name="discriminator_flatten", input_shape=input_shape),
         Dense(hidden_dim, name="discriminator_h1", W_regularizer=reg()),
