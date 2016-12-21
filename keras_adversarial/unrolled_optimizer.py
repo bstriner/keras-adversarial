@@ -1,12 +1,20 @@
-from adversarial.adversarial_optimizers import AdversarialOptimizerSimultaneous
+from keras_adversarial.adversarial_optimizers import AdversarialOptimizer
 import theano.tensor as T
 import theano
 
-class UnrolledAdversarialOptimizer(AdversarialOptimizerSimultaneous):
+
+class UnrolledAdversarialOptimizer(AdversarialOptimizer):
     def __init__(self, depth):
         self.depth = depth
 
-    def call(self, losses, params, optimizers, constraints):
+    def make_train_function(self, inputs, outputs, losses, params, optimizers, constraints, model_updates,
+                            function_kwargs):
+        return K.function(inputs,
+                          outputs,
+                          updates=self.call(losses, params, optimizers, constraints, model_updates) + model_updates,
+                          **function_kwargs)
+
+    def call(self, losses, params, optimizers, constraints, model_updates):
         # Players should be [generator, discriminator]
         assert (len(optimizers) == 2)
 
@@ -17,11 +25,11 @@ class UnrolledAdversarialOptimizer(AdversarialOptimizerSimultaneous):
         discriminator_constraint = constraints[1]
         discriminator_updates = discriminator_optimizer.get_updates(discriminator_params, discriminator_constraint,
                                                                     discriminator_loss)
-        discriminator_replacements = {k: v for k, v in discriminator_updates}
-        updates_t = [(k, k) for k in discriminator_params]
+        updates_t = [(k[0], k[0]) for k in discriminator_updates + model_updates]
+        discriminator_replacements = {k: v for k, v in discriminator_updates + model_updates}
         for i in range(self.depth):
             updates_t = [(k, theano.clone(v, replace=discriminator_replacements)) for k, v in updates_t]
-        discriminator_replacements_t = {k: v for k,v in updates_t}
+        discriminator_replacements_t = {k: v for k, v in updates_t}
 
         generator_params = params[0]
         generator_loss = losses[0]
@@ -29,7 +37,8 @@ class UnrolledAdversarialOptimizer(AdversarialOptimizerSimultaneous):
         generator_constraint = constraints[0]
         generator_updates = generator_optimizer.get_updates(generator_params, generator_constraint, generator_loss)
 
-        unrolled_generator_updates = [(k, theano.clone(v, replace=discriminator_replacements_t)) for k, v in generator_updates]
+        unrolled_generator_updates = [(k, theano.clone(v, replace=discriminator_replacements_t)) for k, v in
+                                      generator_updates]
 
         updates = unrolled_generator_updates + discriminator_updates
         return updates
