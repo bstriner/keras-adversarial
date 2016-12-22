@@ -1,6 +1,16 @@
 from keras_adversarial.adversarial_optimizers import AdversarialOptimizer
-import theano
+
 import keras.backend as K
+
+if K.backend()=="tensorflow":
+    import tensorflow as tf
+    def f_replace(f, replace):
+        return tf.contrib.graph_editor.copy_with_input_replacements(f, replace)
+else:
+    import theano
+    def f_replace(f, replace):
+        return theano.clone(f, replace=replace)
+
 
 class UnrolledAdversarialOptimizer(AdversarialOptimizer):
     def __init__(self, depth):
@@ -27,7 +37,7 @@ class UnrolledAdversarialOptimizer(AdversarialOptimizer):
         updates_t = [(k[0], k[0]) for k in discriminator_updates + model_updates]
         discriminator_replacements = {k: v for k, v in discriminator_updates + model_updates}
         for i in range(self.depth):
-            updates_t = [(k, theano.clone(v, replace=discriminator_replacements)) for k, v in updates_t]
+            updates_t = [(k, f_replace(v, discriminator_replacements)) for k, v in updates_t]
         discriminator_replacements_t = {k: v for k, v in updates_t}
 
         generator_params = params[0]
@@ -36,7 +46,7 @@ class UnrolledAdversarialOptimizer(AdversarialOptimizer):
         generator_constraint = constraints[0]
         generator_updates = generator_optimizer.get_updates(generator_params, generator_constraint, generator_loss)
 
-        unrolled_generator_updates = [(k, theano.clone(v, replace=discriminator_replacements_t)) for k, v in
+        unrolled_generator_updates = [(k, f_replace(v, discriminator_replacements_t)) for k, v in
                                       generator_updates]
 
         updates = unrolled_generator_updates + discriminator_updates

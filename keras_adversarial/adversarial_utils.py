@@ -79,6 +79,19 @@ def gan_targets(n):
     discriminator_real = np.ones((n, 1))
     return [generator_fake, generator_real, discriminator_fake, discriminator_real]
 
+def gan_targets_hinge(n):
+    """
+    Standard training targets for hinge loss
+    [generator_fake, generator_real, discriminator_fake, discriminator_real] = [1, -1, -1, 1]
+    :param n: number of samples
+    :return: array of targets
+    """
+    generator_fake = np.ones((n, 1))
+    generator_real = np.ones((n, 1))*-1
+    discriminator_fake = np.ones((n, 1))*-1
+    discriminator_real = np.ones((n, 1))
+    return [generator_fake, generator_real, discriminator_fake, discriminator_real]
+
 
 def normal_latent_sampling(latent_shape):
     """

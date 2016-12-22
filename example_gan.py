@@ -19,15 +19,15 @@ def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-
     return Sequential([
         Dense(hidden_dim / 4, name="generator_h1", input_dim=latent_dim, W_regularizer=reg()),
         BatchNormalization(mode=batch_norm_mode),
-        #Activation('relu'),
+        # Activation('relu'),
         LeakyReLU(0.2),
         Dense(hidden_dim / 2, name="generator_h2", W_regularizer=reg()),
         BatchNormalization(mode=batch_norm_mode),
-        #Activation('relu'),
+        # Activation('relu'),
         LeakyReLU(0.2),
         Dense(hidden_dim, name="generator_h3", W_regularizer=reg()),
         BatchNormalization(mode=batch_norm_mode),
-        #Activation('relu'),
+        # Activation('relu'),
         LeakyReLU(0.2),
         Dense(np.prod(input_shape), name="generator_x_flat", W_regularizer=reg()),
         Activation('sigmoid'),
@@ -35,7 +35,8 @@ def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-
         name="generator")
 
 
-def model_discriminator(input_shape, hidden_dim=1024, reg=lambda: l1l2(1e-5, 1e-5), dropout=0.5, batch_norm_mode=1):
+def model_discriminator(input_shape, hidden_dim=1024, reg=lambda: l1l2(1e-5, 1e-5), dropout=0.5, batch_norm_mode=1,
+                        output_activation="sigmoid"):
     return Sequential([
         Flatten(name="discriminator_flatten", input_shape=input_shape),
         Dense(hidden_dim, name="discriminator_h1", W_regularizer=reg()),
@@ -51,7 +52,7 @@ def model_discriminator(input_shape, hidden_dim=1024, reg=lambda: l1l2(1e-5, 1e-
         LeakyReLU(0.2),
         Dropout(dropout),
         Dense(1, name="discriminator_y", W_regularizer=reg()),
-        Activation("sigmoid")],
+        Activation(output_activation)],
         name="discriminator")
 
 
@@ -64,7 +65,13 @@ def mnist_data():
     (xtrain, ytrain), (xtest, ytest) = mnist.load_data()
     return mnist_process(xtrain), mnist_process(xtest)
 
-def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, discriminator, latent_dim):
+
+def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, discriminator, latent_dim,
+                targets=gan_targets, loss='binary_crossentropy'):
+    csvpath = os.path.join(path, "history.csv")
+    if os.path.exists(csvpath):
+        print "Already exists: {}".format(csvpath)
+        return
 
     # gan (x - > yfake, yreal), z generated on GPU
     gan = simple_gan(generator, discriminator, normal_latent_sampling((latent_dim,)))
@@ -80,7 +87,7 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
                              player_names=["generator", "discriminator"])
     model.adversarial_compile(adversarial_optimizer=adversarial_optimizer,
                               player_optimizers=[opt_g, opt_d],
-                              loss='binary_crossentropy')
+                              loss=loss)
 
     # train model
     def generator_sampler():
@@ -90,12 +97,12 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
     generator_cb = ImageGridCallback(os.path.join(path, "epoch-{:03d}.png"), generator_sampler)
 
     xtrain, xtest = mnist_data()
-    y = gan_targets(xtrain.shape[0])
-    ytest = gan_targets(xtest.shape[0])
+    y = targets(xtrain.shape[0])
+    ytest = targets(xtest.shape[0])
     history = model.fit(x=xtrain, y=y, validation_data=(xtest, ytest), callbacks=[generator_cb], nb_epoch=nb_epoch,
                         batch_size=32)
     df = pd.DataFrame(history.history)
-    df.to_csv(os.path.join(path, "history.csv"))
+    df.to_csv(csvpath)
 
     generator.save(os.path.join(path, "generator.h5"))
     discriminator.save(os.path.join(path, "discriminator.h5"))
