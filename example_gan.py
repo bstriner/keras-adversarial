@@ -15,17 +15,20 @@ from keras_adversarial import AdversarialModel, ImageGridCallback, simple_gan, g
 from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
 
 
-def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-5), batch_norm_mode=0):
+def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-5), batch_norm_mode=1):
     return Sequential([
         Dense(hidden_dim / 4, name="generator_h1", input_dim=latent_dim, W_regularizer=reg()),
         BatchNormalization(mode=batch_norm_mode),
-        Activation('relu'),
+        #Activation('relu'),
+        LeakyReLU(0.2),
         Dense(hidden_dim / 2, name="generator_h2", W_regularizer=reg()),
         BatchNormalization(mode=batch_norm_mode),
-        Activation('relu'),
+        #Activation('relu'),
+        LeakyReLU(0.2),
         Dense(hidden_dim, name="generator_h3", W_regularizer=reg()),
         BatchNormalization(mode=batch_norm_mode),
-        Activation('relu'),
+        #Activation('relu'),
+        LeakyReLU(0.2),
         Dense(np.prod(input_shape), name="generator_x_flat", W_regularizer=reg()),
         Activation('sigmoid'),
         Reshape(input_shape, name="generator_x")],
@@ -61,7 +64,7 @@ def mnist_data():
     (xtrain, ytrain), (xtest, ytest) = mnist.load_data()
     return mnist_process(xtrain), mnist_process(xtest)
 
-def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, discriminator):
+def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, discriminator, latent_dim):
 
     # gan (x - > yfake, yreal), z generated on GPU
     gan = simple_gan(generator, discriminator, normal_latent_sampling((latent_dim,)))
@@ -110,4 +113,5 @@ if __name__ == "__main__":
     example_gan(AdversarialOptimizerSimultaneous(), "output/gan",
                 opt_g=Adam(1e-4, decay=1e-4, clipvalue=2.0),
                 opt_d=Adam(1e-3, decay=1e-4, clipvalue=2.0),
-                generator=generator, discriminator=discriminator, nb_epoch=100)
+                nb_epoch=100, generator=generator, discriminator=discriminator,
+                latent_dim=latent_dim)

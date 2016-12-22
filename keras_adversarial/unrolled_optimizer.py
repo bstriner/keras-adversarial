@@ -1,7 +1,6 @@
 from keras_adversarial.adversarial_optimizers import AdversarialOptimizer
-import theano.tensor as T
 import theano
-
+import keras.backend as K
 
 class UnrolledAdversarialOptimizer(AdversarialOptimizer):
     def __init__(self, depth):
