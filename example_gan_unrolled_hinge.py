@@ -11,15 +11,17 @@ from keras.models import Sequential
 from keras.layers import Flatten, Dense, Dropout, LeakyReLU, BatchNormalization
 from keras.regularizers import l1l2
 
+
 def example_gan_unrolled_hinge(path, depth):
     # z \in R^100
     latent_dim = 100
     # x \in R^{28x28}
     input_shape = (28, 28)
     # generator (z -> x)
-    generator = model_generator(latent_dim, input_shape)
+    generator = model_generator(latent_dim, input_shape, hidden_dim=512, batch_norm_mode=-1)
     # discriminator (x -> y)
-    discriminator = model_discriminator(input_shape, output_activation='linear')
+    discriminator = model_discriminator(input_shape, output_activation='linear', hidden_dim=512, batch_norm_mode=-1,
+                                        dropout=0)
     example_gan(UnrolledAdversarialOptimizer(depth=depth), path,
                 opt_g=Adam(1e-4, decay=1e-4, clipvalue=2.0),
                 opt_d=Adam(1e-3, decay=1e-4, clipvalue=2.0),

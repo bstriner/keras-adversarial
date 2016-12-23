@@ -13,13 +13,13 @@ def example_gan_unrolled(path, depth):
     # x \in R^{28x28}
     input_shape = (28, 28)
     # generator (z -> x)
-    generator = model_generator(latent_dim, input_shape)
+    generator = model_generator(latent_dim, input_shape, hidden_dim=512, batch_norm_mode=-1)
     # discriminator (x -> y)
-    discriminator = model_discriminator(input_shape)
+    discriminator = model_discriminator(input_shape, hidden_dim=512, dropout=0, batch_norm_mode=-1)
     example_gan(UnrolledAdversarialOptimizer(depth=depth), path,
                 opt_g=Adam(1e-4, decay=1e-4, clipvalue=2.0),
                 opt_d=Adam(1e-3, decay=1e-4, clipvalue=2.0),
-                nb_epoch=50, generator=generator, discriminator=discriminator,
+                nb_epoch=20, generator=generator, discriminator=discriminator,
                 latent_dim=latent_dim)
 
 
