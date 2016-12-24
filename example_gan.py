@@ -101,8 +101,8 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
                               loss=loss)
 
     # train model
+    zsamples = np.random.normal(size=(10 * 10, latent_dim))
     def generator_sampler():
-        zsamples = np.random.normal(size=(10 * 10, latent_dim))
         return generator.predict(zsamples).reshape((10, 10, 28, 28))
 
     generator_cb = ImageGridCallback(os.path.join(path, "epoch-{:03d}.png"), generator_sampler)
