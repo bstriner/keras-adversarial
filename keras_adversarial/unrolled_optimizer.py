@@ -3,7 +3,10 @@ import keras.backend as K
 
 if K.backend() == "tensorflow":
     import tensorflow as tf
-
+    from tensorflow.contrib.graph_editor import select
+    from six import iterkeys
+    from tensorflow.contrib.graph_editor import util
+    from tensorflow.python.framework import ops as tf_ops
 
     def unpack_assignment(a):
         return a.op.inputs[0], a.op.inputs[1]
@@ -14,7 +17,17 @@ if K.backend() == "tensorflow":
 
 
     def f_replace(f, replace):
-        return tf.contrib.graph_editor.graph_replace(f, replace)
+        flatten_target_ts = util.flatten_tree(f)
+        graph = util.get_unique_graph(flatten_target_ts, check_types=(tf_ops.Tensor))
+        control_ios = util.ControlOutputs(graph)
+        ops = select.get_walks_intersection_ops(list(iterkeys(replace)),
+                                                flatten_target_ts,
+                                                control_ios=control_ios)
+        if not ops:
+            #print "Disconnected: {}".format(f)
+            return f
+        else:
+            return tf.contrib.graph_editor.graph_replace(f, replace)
 else:
     import theano
 
@@ -33,7 +46,7 @@ else:
 
 def unroll(updates, uupdates, depth):
     replace = {unpack_assignment(a)[0]: unpack_assignment(a)[1] for a in uupdates}
-    print "Replacements: {}".format(len(replace))
+    #print "Replacements: {}".format(len(replace))
     updates_t = [unpack_assignment(a) for a in updates]
     for i in range(depth):
         updates_t = [(k, f_replace(v, replace)) for k, v in updates_t]
