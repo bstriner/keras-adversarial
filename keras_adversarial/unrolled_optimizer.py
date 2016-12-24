@@ -31,38 +31,31 @@ else:
         return theano.clone(f, replace=replace)
 
 
-def unroll(loss, opt, params, constraint, uloss, uopt, uparams, uconstraint, depth, params_only=False):
-    replace = {unpack_assignment(a)[0]: unpack_assignment(a)[1] for a in uopt.get_updates(uparams, uconstraint, uloss)}
-    if params_only:
-        replace = {k: v for k, v in replace.iteritems() if k in map_params(uparams)}
+def unroll(updates, uupdates, depth):
+    replace = {unpack_assignment(a)[0]: unpack_assignment(a)[1] for a in uupdates}
     print "Replacements: {}".format(len(replace))
-    loss_t = loss
+    updates_t = [unpack_assignment(a) for a in updates]
     for i in range(depth):
-        loss_t = f_replace(loss_t, replace)
-    updates = opt.get_updates(params, constraint, loss_t)
-    return updates
+        updates_t = [(k, f_replace(v, replace)) for k, v in updates_t]
+    return [K.update(a,b) for a,b in updates_t]
 
 
 class UnrolledAdversarialOptimizer(AdversarialOptimizerSimultaneous):
-    def __init__(self, depth_g, depth_d, params_only):
+    def __init__(self, depth_g, depth_d):
         """
         :param depth_g: Depth to unroll discriminator when updating generator
         :param depth_d: Depth to unroll generator when updating discriminator
         """
         self.depth_g = depth_g
         self.depth_d = depth_d
-        self.params_only = params_only
 
     def call(self, losses, params, optimizers, constraints):
         # Players should be [generator, discriminator]
         assert (len(optimizers) == 2)
 
-        gupdates = unroll(losses[0], optimizers[0], params[0], constraints[0],
-                          losses[1], optimizers[1], params[1], constraints[1],
-                          self.depth_g, self.params_only)
-        dupdates = unroll(losses[1], optimizers[1], params[1], constraints[1],
-                          losses[0], optimizers[0], params[0], constraints[0],
-                          self.depth_d, self.params_only)
+        updates = [o.get_updates(p, c, l) for o, p, c, l in zip(optimizers, params, constraints, losses)]
 
-        updates = gupdates + dupdates
-        return updates
+        gupdates = unroll(updates[0], updates[1], self.depth_g)
+        dupdates = unroll(updates[1], updates[0], self.depth_d)
+
+        return gupdates + dupdates

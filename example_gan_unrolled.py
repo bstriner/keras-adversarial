@@ -18,7 +18,7 @@ def example_gan_unrolled(path, depth_g, depth_d, clipvalue=2.0):
     generator = model_generator(latent_dim, input_shape, hidden_dim=512, batch_norm_mode=-1)
     # discriminator (x -> y)
     discriminator = model_discriminator(input_shape, hidden_dim=512, dropout=0, batch_norm_mode=-1)
-    example_gan(UnrolledAdversarialOptimizer(depth_g=depth_g, depth_d=depth_d, params_only=True), path,
+    example_gan(UnrolledAdversarialOptimizer(depth_g=depth_g, depth_d=depth_d), path,
                 opt_g=Adam(1e-4, decay=1e-4, clipvalue=clipvalue),#, nesterov=True, momentum=0.1),
                 opt_d=Adam(1e-3, decay=1e-4, clipvalue=clipvalue),# nesterov=True, momentum=0.1),
                 nb_epoch=50, generator=generator, discriminator=discriminator,
