@@ -30,15 +30,12 @@ def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-
     return Sequential([layer for layer in [
         Dense(hidden_dim / 4, name="generator_h1", input_dim=latent_dim, W_regularizer=reg()),
         batch_norm(batch_norm_mode),
-        # Activation('relu'),
         LeakyReLU(0.2),
         Dense(hidden_dim / 2, name="generator_h2", W_regularizer=reg()),
         batch_norm(batch_norm_mode),
-        # Activation('relu'),
         LeakyReLU(0.2),
         Dense(hidden_dim, name="generator_h3", W_regularizer=reg()),
         batch_norm(batch_norm_mode),
-        # Activation('relu'),
         LeakyReLU(0.2),
         Dense(np.prod(input_shape), name="generator_x_flat", W_regularizer=reg()),
         Activation('sigmoid'),
@@ -81,9 +78,10 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
                 targets=gan_targets, loss='binary_crossentropy'):
     csvpath = os.path.join(path, "history.csv")
     if os.path.exists(csvpath):
-        print "Already exists: {}".format(csvpath)
+        print("Already exists: {}".format(csvpath))
         return
 
+    print("Training: {}".format(csvpath))
     # gan (x - > yfake, yreal), z generated on GPU
     gan = simple_gan(generator, discriminator, normal_latent_sampling((latent_dim,)))
 

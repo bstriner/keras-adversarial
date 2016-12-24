@@ -1,5 +1,4 @@
 from keras_adversarial.adversarial_optimizers import AdversarialOptimizerSimultaneous
-
 import keras.backend as K
 
 if K.backend() == "tensorflow":
@@ -7,7 +6,8 @@ if K.backend() == "tensorflow":
 
 
     def f_replace(f, replace):
-        return tf.contrib.graph_editor.copy_with_input_replacements(f, replace)
+        replacements = {k.op.outputs[0]: v.op.outputs[0] for k, v in replace.iteritems()}
+        return tf.contrib.graph_editor.graph_replace(f, replacements)
 else:
     import theano
 
