@@ -10,9 +10,12 @@ from keras.layers import Dense, Reshape, Flatten, Dropout, LeakyReLU, Activation
 from keras.models import Sequential
 from keras.optimizers import Adam
 from keras.regularizers import l1, l1l2
+from keras.callbacks import TensorBoard
 from keras.datasets import mnist
 from keras_adversarial import AdversarialModel, ImageGridCallback, simple_gan, gan_targets
 from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
+import keras.backend as K
+
 
 def batch_norm(batch_norm_mode):
     if batch_norm_mode >= 0:
@@ -20,11 +23,13 @@ def batch_norm(batch_norm_mode):
     else:
         return None
 
+
 def dropout_layer(dropout):
-    if(dropout > 0):
+    if (dropout > 0):
         return Dropout(dropout)
     else:
         return None
+
 
 def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-5), batch_norm_mode=1):
     return Sequential([layer for layer in [
@@ -40,7 +45,7 @@ def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-
         Dense(np.prod(input_shape), name="generator_x_flat", W_regularizer=reg()),
         Activation('sigmoid'),
         Reshape(input_shape, name="generator_x")] if layer is not None],
-        name="generator")
+                      name="generator")
 
 
 def model_discriminator(input_shape, hidden_dim=1024, reg=lambda: l1l2(1e-5, 1e-5), dropout=0.5, batch_norm_mode=1,
@@ -61,7 +66,7 @@ def model_discriminator(input_shape, hidden_dim=1024, reg=lambda: l1l2(1e-5, 1e-
         dropout_layer(dropout),
         Dense(1, name="discriminator_y", W_regularizer=reg()),
         Activation(output_activation)] if layer is not None],
-        name="discriminator")
+                      name="discriminator")
 
 
 def mnist_process(x):
@@ -100,6 +105,7 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
 
     # train model
     zsamples = np.random.normal(size=(10 * 10, latent_dim))
+
     def generator_sampler():
         return generator.predict(zsamples).reshape((10, 10, 28, 28))
 
@@ -108,7 +114,11 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
     xtrain, xtest = mnist_data()
     y = targets(xtrain.shape[0])
     ytest = targets(xtest.shape[0])
-    history = model.fit(x=xtrain, y=y, validation_data=(xtest, ytest), callbacks=[generator_cb], nb_epoch=nb_epoch,
+    callbacks = [generator_cb]
+    if K.backend() == "tensorflow":
+        callbacks.append(
+            TensorBoard(log_dir=os.path.join(path, 'logs'), histogram_freq=0, write_graph=True, write_images=True))
+    history = model.fit(x=xtrain, y=y, validation_data=(xtest, ytest), callbacks=callbacks, nb_epoch=nb_epoch,
                         batch_size=32)
     df = pd.DataFrame(history.history)
     df.to_csv(csvpath)
