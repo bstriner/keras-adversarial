@@ -38,7 +38,7 @@ def model_encoder(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-5)
     return Model(x, z, name="encoder")
 
 
-def model_discriminator(latent_dim, input_shape, output_dim=1, hidden_dim=1024,
+def model_discriminator(latent_dim, input_shape, output_dim=1, hidden_dim=2048,
                         reg=lambda: l1l2(1e-5, 1e-5), batch_norm_mode=1):
     z = Input((latent_dim,))
     x = Input(input_shape, name="x")
@@ -115,7 +115,7 @@ def main():
     y = gan_targets(xtrain.shape[0])
     ytest = gan_targets(xtest.shape[0])
     history = model.fit(x=xtrain, y=y, validation_data=(xtest, ytest), callbacks=[generator_cb, autoencoder_cb],
-                        nb_epoch=50, batch_size=32)
+                        nb_epoch=100, batch_size=32)
     df = pd.DataFrame(history.history)
     df.to_csv("output/bigan/history.csv")
 

@@ -16,14 +16,22 @@ If there are `n` players and the base model has `m` targets and `k` metrics:
 
 ## Examples
 
-### Example Generative Adversarial Network (GAN)
+### Generative Adversarial Network (GAN)
 
 [example_gan.py](https://github.com/bstriner/keras_adversarial/blob/master/examples/example_gan.py) shows how to
 create a GAN in Keras.
 
 ![Example GAN](https://github.com/bstriner/keras_adversarial/raw/master/doc/images/gan-epoch-099.png)
 
-### Example Bi-Directional Generative Adversarial Network (BiGAN)
+### Bi-Directional Generative Adversarial Network (BiGAN)
 
 [example_bigan.py](https://github.com/bstriner/keras_adversarial/blob/master/examples/example_bigan.py) shows how to
  create a BiGAN in Keras.
+
+### Unrolled Generative Adversarial Network
+
+[example_gan_unrolled.py](https://github.com/bstriner/keras_adversarial/blob/master/examples/example_gan_unrolled.py)
+shows how to use the unrolled optimizer.
+
+WARNING: Unrolling the discriminator 8 times takes about 6 hours to build the function on my computer,
+but only a few minutes for epoch of training. Be prepared to let it run a long time or turn the depth down to around 4.

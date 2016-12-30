@@ -94,7 +94,7 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
                               player_optimizers=[opt_g, opt_d],
                               loss=loss)
 
-    # train model
+    # create callback to generate images
     zsamples = np.random.normal(size=(10 * 10, latent_dim))
 
     def generator_sampler():
@@ -102,6 +102,7 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
 
     generator_cb = ImageGridCallback(os.path.join(path, "epoch-{:03d}.png"), generator_sampler)
 
+    # train model
     xtrain, xtest = mnist_data()
     y = targets(xtrain.shape[0])
     ytest = targets(xtest.shape[0])
@@ -111,9 +112,12 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
             TensorBoard(log_dir=os.path.join(path, 'logs'), histogram_freq=0, write_graph=True, write_images=True))
     history = model.fit(x=xtrain, y=y, validation_data=(xtest, ytest), callbacks=callbacks, nb_epoch=nb_epoch,
                         batch_size=32)
+
+    # save history to CSV
     df = pd.DataFrame(history.history)
     df.to_csv(csvpath)
 
+    # save models
     generator.save(os.path.join(path, "generator.h5"))
     discriminator.save(os.path.join(path, "discriminator.h5"))
 
