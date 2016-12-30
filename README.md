@@ -1,5 +1,4 @@
-# unrolled_gan
-Keras Adversarial Networks
+# Keras Adversarial Models
 
 AdversarialModel simulates multi-player games. AdversarialModel takes as input a base model and a list of players.
 
@@ -15,5 +14,9 @@ AdversarialOptimizer is a base class that creates the training function:
 * AdversarialOptimizerSimultaneous updates each player simultaneously
 * AdversarialOptimizerAlternating updates each player in a round-robin
 
+## Example GAN
 example_gan contains an example of using AdversarialModel to train a GAN
+
+
+
 example_bigan contains an example of using AdversarialModel to train a BiGAN

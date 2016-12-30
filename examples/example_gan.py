@@ -15,24 +15,25 @@ from keras.datasets import mnist
 from keras_adversarial import AdversarialModel, ImageGridCallback, simple_gan, gan_targets
 from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
 import keras.backend as K
+from mnist_utils import mnist_data
 
 
 def batch_norm(batch_norm_mode):
     if batch_norm_mode >= 0:
         return BatchNormalization(mode=batch_norm_mode)
     else:
-        return None
+        return Activation('linear')
 
 
 def dropout_layer(dropout):
     if (dropout > 0):
         return Dropout(dropout)
     else:
-        return None
+        return Activation('linear')
 
 
-def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-5), batch_norm_mode=1):
-    return Sequential([layer for layer in [
+def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-5), batch_norm_mode=2):
+    return Sequential([
         Dense(hidden_dim / 4, name="generator_h1", input_dim=latent_dim, W_regularizer=reg()),
         batch_norm(batch_norm_mode),
         LeakyReLU(0.2),
@@ -44,13 +45,13 @@ def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-
         LeakyReLU(0.2),
         Dense(np.prod(input_shape), name="generator_x_flat", W_regularizer=reg()),
         Activation('sigmoid'),
-        Reshape(input_shape, name="generator_x")] if layer is not None],
-                      name="generator")
+        Reshape(input_shape, name="generator_x")],
+        name="generator")
 
 
 def model_discriminator(input_shape, hidden_dim=1024, reg=lambda: l1l2(1e-5, 1e-5), dropout=0.5, batch_norm_mode=1,
                         output_activation="sigmoid"):
-    return Sequential([layer for layer in [
+    return Sequential([
         Flatten(name="discriminator_flatten", input_shape=input_shape),
         Dense(hidden_dim, name="discriminator_h1", W_regularizer=reg()),
         batch_norm(batch_norm_mode),
@@ -65,18 +66,8 @@ def model_discriminator(input_shape, hidden_dim=1024, reg=lambda: l1l2(1e-5, 1e-
         LeakyReLU(0.2),
         dropout_layer(dropout),
         Dense(1, name="discriminator_y", W_regularizer=reg()),
-        Activation(output_activation)] if layer is not None],
-                      name="discriminator")
-
-
-def mnist_process(x):
-    x = x.astype(np.float32) / 255.0
-    return x
-
-
-def mnist_data():
-    (xtrain, ytrain), (xtest, ytest) = mnist.load_data()
-    return mnist_process(xtrain), mnist_process(xtest)
+        Activation(output_activation)],
+        name="discriminator")
 
 
 def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, discriminator, latent_dim,
@@ -127,7 +118,7 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
     discriminator.save(os.path.join(path, "discriminator.h5"))
 
 
-if __name__ == "__main__":
+def main():
     # z \in R^100
     latent_dim = 100
     # x \in R^{28x28}
@@ -137,7 +128,11 @@ if __name__ == "__main__":
     # discriminator (x -> y)
     discriminator = model_discriminator(input_shape)
     example_gan(AdversarialOptimizerSimultaneous(), "output/gan",
-                opt_g=Adam(1e-4, decay=1e-4, clipvalue=2.0),
-                opt_d=Adam(1e-3, decay=1e-4, clipvalue=2.0),
+                opt_g=Adam(1e-4, decay=1e-4),
+                opt_d=Adam(1e-3, decay=1e-4),
                 nb_epoch=100, generator=generator, discriminator=discriminator,
                 latent_dim=latent_dim)
+
+
+if __name__ == "__main__":
+    main()
