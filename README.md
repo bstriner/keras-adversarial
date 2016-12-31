@@ -52,3 +52,7 @@ If you create separate models, use `player_models` parameter of `AdversarialMode
 
 If you aren't using dropout, one model is sufficient, and use `base_model` parameter of `AdversarialModel` constructor,
  which will duplicate the `base_model` for each player.
+ 
+###Theano and Tensorflow
+I do most of my development in theano but try to test tensorflow when I have extra time. The goal is
+to support both. Please let me know any issues you have with either backend.
