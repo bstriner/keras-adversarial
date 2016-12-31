@@ -39,7 +39,7 @@ def simple_gan(generator, discriminator, latent_sampling):
     return gan
 
 
-def simple_bigan(generator, encoder, discriminator, latent_sampling):
+def simple_bigan(generator, encoder, discriminator, latent_sampling = None):
     """
     Construct BiGRAN x -> yfake, yreal
     :param generator: model z->x
@@ -48,14 +48,20 @@ def simple_bigan(generator, encoder, discriminator, latent_sampling):
     :param latent_sampling: layer for sampling from latent space
     :return:
     """
-    zfake = latent_sampling(discriminator.inputs[1])
+    if latent_sampling is None:
+        zfake = generator.inputs[0]
+    else:
+        zfake = latent_sampling(discriminator.inputs[1])
     xreal = discriminator.inputs[1]
     xfake = generator(zfake)
     zreal = encoder(xreal)
     yfake = discriminator([zfake, xfake])
     yreal = discriminator([zreal, xreal])
-    bigan = Model(xreal, fix_names([yfake, yreal], ["yfake", "yreal"]), name="bigan")
-    return bigan
+    if latent_sampling is None:
+        inputs = [zfake, xreal]
+    else:
+        inputs = [xreal]
+    return Model(inputs, fix_names([yfake, yreal], ["yfake", "yreal"]), name="bigan")
 
 
 def fix_names(outputs, names):

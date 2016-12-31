@@ -13,15 +13,15 @@ class AdversarialModel(Model):
     Each player optimizes loss on that player's targets.
     """
 
-    def __init__(self, base_model, player_params, player_names=None):
+    def __init__(self, player_params, base_model=None, player_models=None, player_names=None):
         """
-        Initialize adversarial model.
-        :param base_model: base model will be duplicated for each player
-        :param player_params: list of list of player parameters
-        :param player_names: names of each player
+        Initialize adversarial model. Specify base_model or player_models, not both.
+        :param player_params: list of player parameters for each player (shared variables)
+        :param base_model: base model will be duplicated for each player to create player models
+        :param player_models: model for each player
+        :param player_names: names of each player (optional)
         """
 
-        self.base_model = base_model
         assert (len(player_params) > 0)
         self.player_params = player_params
         self.player_count = len(self.player_params)
@@ -36,6 +36,22 @@ class AdversarialModel(Model):
         self.total_loss = None
         self.optimizer = None
         self._function_kwargs = None
+        if base_model is None and player_models is None:
+            raise ValueError("Please specify either base_model or player_models")
+        if base_model is not None and player_models is not None:
+            raise ValueError("Specify base_model or player_models, not both")
+        if base_model is not None:
+            self.layers = []
+            for i in range(self.player_count):
+                # duplicate base model
+                model = Model(base_model.inputs,
+                              fix_names(base_model(base_model.inputs), base_model.output_names))
+                # add model to list
+                self.layers.append(model)
+        if player_models is not None:
+            assert (len(player_models) == self.player_count)
+            self.layers = player_models
+
 
     def adversarial_compile(self, adversarial_optimizer, player_optimizers, loss,
                             **kwargs):
@@ -56,23 +72,18 @@ class AdversarialModel(Model):
         self.optimizer = None
 
         # Build player models
-        self.layers = []
-        for i in range(self.player_count):
-            # duplicate base model
-            model = Model(self.base_model.inputs,
-                          fix_names(self.base_model(self.base_model.inputs), self.base_model.output_names))
-            # compile model
-            model.compile(self.optimizers[i], loss=self.loss)
-            # add model to list
-            self.layers.append(model)
+        for opt, model in zip(self.optimizers, self.layers):
+            model.compile(opt, loss=self.loss)
 
         self.train_function = None
         self.test_function = None
 
-        # Inputs are same as base model
-        self.internal_input_shapes = self.base_model.internal_input_shapes
-        self.input_names = self.base_model.input_names
-        self.inputs = self.base_model.inputs
+        # Inputs are same for each model
+        def filter_inputs(inputs):
+            return inputs
+        self.internal_input_shapes = filter_inputs(self.layers[0].internal_input_shapes)
+        self.input_names = filter_inputs(self.layers[0].input_names)
+        self.inputs = filter_inputs(self.layers[0].inputs)
 
         # Outputs are concatenated player models
         models = self.layers
@@ -108,10 +119,6 @@ class AdversarialModel(Model):
 
     @property
     def updates(self):
-        #print "Updates: %s" % str(self.base_model.updates)
-        #print "Updates: %s" % str(list(itertools.chain.from_iterable(model.updates for model in self.layers)))
-        #print "Updates: %s" % str(merge_updates(self.base_model.updates))
-        #return merge_updates(self.base_model.updates)
         return merge_updates(list(itertools.chain.from_iterable(model.updates for model in self.layers)))
 
     @property

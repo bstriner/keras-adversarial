@@ -26,7 +26,9 @@ create a GAN in Keras.
 ### Bi-Directional Generative Adversarial Network (BiGAN)
 
 [example_bigan.py](https://github.com/bstriner/keras_adversarial/blob/master/examples/example_bigan.py) shows how to
- create a BiGAN in Keras.
+ create a BiGAN in Keras. Still needs some tuning to get prettier pictures.
+  
+![Example BiGAN](https://github.com/bstriner/keras_adversarial/raw/master/doc/images/bigan.png)
 
 ### Unrolled Generative Adversarial Network
 
@@ -35,3 +37,18 @@ shows how to use the unrolled optimizer.
 
 WARNING: Unrolling the discriminator 8 times takes about 6 hours to build the function on my computer,
 but only a few minutes for epoch of training. Be prepared to let it run a long time or turn the depth down to around 4.
+
+##Notes
+
+###Dropout
+When training adversarial models using dropout, you may want to create separate models for each player. 
+
+If you want to train a discriminator with dropout, but train the generator against the discriminator without dropout, 
+create two models.
+* GAN to train generator: `D(G(z, dropout=0.5), dropout=0)`
+* GAN to train discriminator: `D(G(z, dropout=0), dropout=0.5)`
+
+If you create separate models, use `player_models` parameter of `AdversarialModel` constructor.
+
+If you aren't using dropout, one model is sufficient, and use `base_model` parameter of `AdversarialModel` constructor,
+ which will duplicate the `base_model` for each player.
