@@ -2,7 +2,7 @@ from keras.layers import Activation, Lambda
 import numpy as np
 import keras.backend as K
 from keras.models import Model
-
+from six import iteritems
 
 def build_gan(generator, discriminator, name="gan"):
     """
@@ -39,7 +39,7 @@ def simple_gan(generator, discriminator, latent_sampling):
     return gan
 
 
-def simple_bigan(generator, encoder, discriminator, latent_sampling = None):
+def simple_bigan(generator, encoder, discriminator, latent_sampling=None):
     """
     Construct BiGRAN x -> yfake, yreal
     :param generator: model z->x
@@ -85,6 +85,7 @@ def gan_targets(n):
     discriminator_real = np.ones((n, 1))
     return [generator_fake, generator_real, discriminator_fake, discriminator_real]
 
+
 def gan_targets_hinge(n):
     """
     Standard training targets for hinge loss
@@ -93,8 +94,8 @@ def gan_targets_hinge(n):
     :return: array of targets
     """
     generator_fake = np.ones((n, 1))
-    generator_real = np.ones((n, 1))*-1
-    discriminator_fake = np.ones((n, 1))*-1
+    generator_real = np.ones((n, 1)) * -1
+    discriminator_fake = np.ones((n, 1)) * -1
     discriminator_real = np.ones((n, 1))
     return [generator_fake, generator_real, discriminator_fake, discriminator_real]
 
@@ -122,19 +123,19 @@ def uniform_latent_sampling(latent_shape, low=0.0, high=1.0):
 def n_choice(x, n):
     return x[np.random.choice(x.shape[0], size=n, replace=False)]
 
+
 def merge_updates(updates):
     """Average repeated updates of the same variable"""
     upd = {}
-    for k,v in updates:
+    for k, v in updates:
         if k not in upd:
             upd[k] = []
         upd[k].append(v)
     ret = []
-    for k,v in upd.iteritems():
+    for k, v in iteritems(upd):
         n = len(v)
-        if n==1:
+        if n == 1:
             ret.append((k, v[0]))
         else:
-            ret.append((k, sum(v)/n))
+            ret.append((k, sum(v) / n))
     return ret
-
