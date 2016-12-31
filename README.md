@@ -28,7 +28,7 @@ create a GAN in Keras.
 [example_bigan.py](https://github.com/bstriner/keras_adversarial/blob/master/examples/example_bigan.py) shows how to
  create a BiGAN in Keras. Still needs some tuning to get prettier pictures.
   
-![Example BiGAN](https://github.com/bstriner/keras_adversarial/raw/master/doc/images/bigan.png)
+![Example BiGAN](https://github.com/bstriner/keras_adversarial/raw/master/doc/images/bigan-epoch-099.png)
 
 ### Unrolled Generative Adversarial Network
 

@@ -20,7 +20,7 @@ from keras.layers import BatchNormalization, LeakyReLU
 import os
 
 
-def model_encoder(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-5), batch_norm_mode=2):
+def model_encoder(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-5), batch_norm_mode=0):
     x = Input(input_shape, name="x")
     h = Flatten()(x)
     h = Dense(hidden_dim, name="encoder_h1", W_regularizer=reg())(h)
@@ -39,8 +39,8 @@ def model_encoder(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-5)
     return Model(x, z, name="encoder")
 
 
-def model_discriminator(latent_dim, input_shape, output_dim=1, hidden_dim=1024,
-                        reg=lambda: l1l2(1e-5, 1e-5), batch_norm_mode=1, dropout=0.5):
+def model_discriminator(latent_dim, input_shape, output_dim=1, hidden_dim=2048,
+                        reg=lambda: l1l2(1e-7, 1e-7), batch_norm_mode=1, dropout=0.5):
     z = Input((latent_dim,))
     x = Input(input_shape, name="x")
     h = merge([z, Flatten()(x)], mode='concat')
