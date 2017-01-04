@@ -1,4 +1,4 @@
-from keras_adversarial.adversarial_optimizers import AdversarialOptimizerSimultaneous
+from .adversarial_optimizers import AdversarialOptimizerSimultaneous
 import keras.backend as K
 
 if K.backend() == "tensorflow":
