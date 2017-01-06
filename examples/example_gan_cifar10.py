@@ -20,21 +20,21 @@ from image_utils import dim_ordering_fix, dim_ordering_unfix, dim_ordering_shape
 
 def model_generator():
     model = Sequential()
-    nch = 1024
+    nch = 512
     reg = lambda: l1l2(l1=1e-7, l2=1e-7)
     model.add(Dense(input_dim=100, output_dim=nch*4*4, W_regularizer=reg()))
-    model.add(BatchNormalization(mode=0))
+    model.add(BatchNormalization(mode=2))
     model.add(Reshape(dim_ordering_shape((nch, 4, 4))))
     model.add(Convolution2D(nch/2, 5, 5, border_mode='same', W_regularizer=reg()))
-    model.add(BatchNormalization(mode=0, axis=1))
+    model.add(BatchNormalization(mode=2, axis=1))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
     model.add(Convolution2D(nch/2, 5, 5, border_mode='same', W_regularizer=reg()))
-    model.add(BatchNormalization(mode=0, axis=1))
+    model.add(BatchNormalization(mode=2, axis=1))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
     model.add(Convolution2D(nch/4, 5, 5, border_mode='same', W_regularizer=reg()))
-    model.add(BatchNormalization(mode=0, axis=1))
+    model.add(BatchNormalization(mode=2, axis=1))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
     model.add(Convolution2D(3, 5, 5, border_mode='same', W_regularizer=reg()))
@@ -45,16 +45,16 @@ def model_generator():
 
 def model_discriminator():
     model = Sequential()
-    nch = 512
+    nch = 256
     reg = lambda: l1l2(l1=1e-7, l2=1e-7)
-    model.add(Convolution2D(nch, 5, 5, border_mode='same', W_regularizer=reg(),
+    model.add(Convolution2D(nch/4, 5, 5, border_mode='same', W_regularizer=reg(),
                             input_shape=dim_ordering_shape((3, 32, 32))))
     model.add(LeakyReLU(0.2))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Convolution2D(nch/2, 5, 5, border_mode='same', W_regularizer=reg()))
     model.add(LeakyReLU(0.2))
     model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Convolution2D(nch/4, 5, 5, border_mode='same', W_regularizer=reg()))
+    model.add(Convolution2D(nch, 5, 5, border_mode='same', W_regularizer=reg()))
     model.add(LeakyReLU(0.2))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Flatten())
