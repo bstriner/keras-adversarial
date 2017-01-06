@@ -12,40 +12,12 @@ from keras.datasets import mnist
 import pandas as pd
 import numpy as np
 import keras.backend as K
-from adversarial import AdversarialModel, ImageGridCallback, simple_gan, gan_targets
-from adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling, AdversarialOptimizerAlternating
-
+from keras_adversarial import AdversarialModel, ImageGridCallback, simple_gan, gan_targets
+from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling, AdversarialOptimizerAlternating
+from image_utils import dim_ordering_fix, dim_ordering_input, dim_ordering_reshape, dim_ordering_unfix
 
 def leaky_relu(x):
     return K.relu(x, 0.2)
-
-
-def dim_ordering_fix(x):
-    if K.image_dim_ordering() == 'th':
-        return x
-    else:
-        return np.transpose(x, (0, 2, 3, 1))
-
-
-def dim_ordering_unfix(x):
-    if K.image_dim_ordering() == 'th':
-        return x
-    else:
-        return np.transpose(x, (0, 3, 1, 2))
-
-
-def dim_ordering_input(input_shape, name):
-    if K.image_dim_ordering() == 'th':
-        return Input(input_shape, name=name)
-    else:
-        return Input((input_shape[1], input_shape[2], input_shape[0]), name=name)
-
-
-def dim_ordering_reshape(k, w, **kwargs):
-    if K.image_dim_ordering() == 'th':
-        return Reshape((k, w, w), **kwargs)
-    else:
-        return Reshape((w, w, k), **kwargs)
 
 
 def model_generator():
