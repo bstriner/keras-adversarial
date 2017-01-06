@@ -16,11 +16,11 @@ from keras_adversarial import AdversarialModel, ImageGridCallback, simple_gan, g
 from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
 import keras.backend as K
 from cifar10_utils import cifar10_data
-from image_utils import dim_ordering_fix, dim_ordering_input, dim_ordering_reshape, dim_ordering_unfix, dim_ordering_shape
+from image_utils import dim_ordering_fix, dim_ordering_unfix, dim_ordering_shape
 
 def model_generator():
     model = Sequential()
-    nch = 512
+    nch = 1024
     reg = lambda: l1l2(l1=1e-7, l2=1e-7)
     model.add(Dense(input_dim=100, output_dim=nch*4*4, W_regularizer=reg()))
     model.add(BatchNormalization(mode=0))
@@ -45,24 +45,20 @@ def model_generator():
 
 def model_discriminator():
     model = Sequential()
-    nch = 256
-    reg = lambda: l1l2(l1=1e-5, l2=1e-5)
+    nch = 512
+    reg = lambda: l1l2(l1=1e-7, l2=1e-7)
     model.add(Convolution2D(nch, 5, 5, border_mode='same', W_regularizer=reg(),
                             input_shape=dim_ordering_shape((3, 32, 32))))
-    #model.add(BatchNormalization(mode=1, axis=1))
     model.add(LeakyReLU(0.2))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Convolution2D(nch/2, 5, 5, border_mode='same', W_regularizer=reg()))
-    #model.add(BatchNormalization(mode=1, axis=1))
     model.add(LeakyReLU(0.2))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Convolution2D(nch/4, 5, 5, border_mode='same', W_regularizer=reg()))
-    #model.add(BatchNormalization(mode=1, axis=1))
     model.add(LeakyReLU(0.2))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Flatten())
     model.add(Dense(512, W_regularizer=reg()))
-    model.add(BatchNormalization(mode=1))
     model.add(LeakyReLU(0.2))
     model.add(Dense(1, W_regularizer=reg()))
     model.add(Activation('sigmoid'))
@@ -107,7 +103,7 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
     if K.backend() == "tensorflow":
         callbacks.append(
             TensorBoard(log_dir=os.path.join(path, 'logs'), histogram_freq=0, write_graph=True, write_images=True))
-    history = model.fit(x=xtrain, y=y, validation_data=(xtest, ytest), callbacks=callbacks, nb_epoch=nb_epoch,
+    history = model.fit(x=dim_ordering_fix(xtrain), y=y, validation_data=(dim_ordering_fix(xtest), ytest), callbacks=callbacks, nb_epoch=nb_epoch,
                         batch_size=32)
 
     # save history to CSV
