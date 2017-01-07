@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 import os
 from keras.layers import Dense, Reshape, Flatten, Dropout, LeakyReLU, Activation, BatchNormalization
-from keras.layers.convolutional import Convolution2D, UpSampling2D, MaxPooling2D
+from keras.layers.convolutional import Convolution2D, UpSampling2D, MaxPooling2D, AveragePooling2D
 from keras.models import Sequential
 from keras.optimizers import Adam
 from keras.callbacks import TensorBoard
@@ -18,26 +18,28 @@ import keras.backend as K
 from cifar10_utils import cifar10_data
 from image_utils import dim_ordering_fix, dim_ordering_unfix, dim_ordering_shape
 
+
 def model_generator():
     model = Sequential()
-    nch = 512
+    nch = 128
     reg = lambda: l1l2(l1=1e-7, l2=1e-7)
-    model.add(Dense(input_dim=100, output_dim=nch*4*4, W_regularizer=reg()))
+    h = 5
+    model.add(Dense(input_dim=100, output_dim=nch * 4 * 4, W_regularizer=reg()))
     model.add(BatchNormalization(mode=2))
     model.add(Reshape(dim_ordering_shape((nch, 4, 4))))
-    model.add(Convolution2D(nch/2, 5, 5, border_mode='same', W_regularizer=reg()))
+    model.add(Convolution2D(nch, h, h, border_mode='same', W_regularizer=reg()))
     model.add(BatchNormalization(mode=2, axis=1))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
-    model.add(Convolution2D(nch/2, 5, 5, border_mode='same', W_regularizer=reg()))
+    model.add(Convolution2D(nch / 2, h, h, border_mode='same', W_regularizer=reg()))
     model.add(BatchNormalization(mode=2, axis=1))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
-    model.add(Convolution2D(nch/4, 5, 5, border_mode='same', W_regularizer=reg()))
+    model.add(Convolution2D(nch / 2, h, h, border_mode='same', W_regularizer=reg()))
     model.add(BatchNormalization(mode=2, axis=1))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
-    model.add(Convolution2D(3, 5, 5, border_mode='same', W_regularizer=reg()))
+    model.add(Convolution2D(3, h, h, border_mode='same', W_regularizer=reg()))
     model.add(Activation('sigmoid'))
     model.summary()
     return model
@@ -46,21 +48,21 @@ def model_generator():
 def model_discriminator():
     model = Sequential()
     nch = 256
+    h = 5
     reg = lambda: l1l2(l1=1e-7, l2=1e-7)
-    model.add(Convolution2D(nch/4, 5, 5, border_mode='same', W_regularizer=reg(),
+    model.add(Convolution2D(nch / 4, h, h, border_mode='same', W_regularizer=reg(),
                             input_shape=dim_ordering_shape((3, 32, 32))))
     model.add(LeakyReLU(0.2))
     model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Convolution2D(nch/2, 5, 5, border_mode='same', W_regularizer=reg()))
+    model.add(Convolution2D(nch / 2, h, h, border_mode='same', W_regularizer=reg()))
     model.add(LeakyReLU(0.2))
     model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Convolution2D(nch, 5, 5, border_mode='same', W_regularizer=reg()))
+    model.add(Convolution2D(nch, h, h, border_mode='same', W_regularizer=reg()))
     model.add(LeakyReLU(0.2))
     model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Convolution2D(1, h, h, border_mode='same', W_regularizer=reg()))
+    model.add(AveragePooling2D(pool_size=(4, 4), border_mode='valid'))
     model.add(Flatten())
-    model.add(Dense(512, W_regularizer=reg()))
-    model.add(LeakyReLU(0.2))
-    model.add(Dense(1, W_regularizer=reg()))
     model.add(Activation('sigmoid'))
     model.summary()
     return model
@@ -90,7 +92,7 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
     zsamples = np.random.normal(size=(10 * 10, latent_dim))
 
     def generator_sampler():
-        xpred = dim_ordering_unfix(generator.predict(zsamples)).transpose((0,2,3,1))
+        xpred = dim_ordering_unfix(generator.predict(zsamples)).transpose((0, 2, 3, 1))
         return xpred.reshape((10, 10) + xpred.shape[1:])
 
     generator_cb = ImageGridCallback(os.path.join(path, "epoch-{:03d}.png"), generator_sampler, cmap=None)
@@ -103,7 +105,8 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
     if K.backend() == "tensorflow":
         callbacks.append(
             TensorBoard(log_dir=os.path.join(path, 'logs'), histogram_freq=0, write_graph=True, write_images=True))
-    history = model.fit(x=dim_ordering_fix(xtrain), y=y, validation_data=(dim_ordering_fix(xtest), ytest), callbacks=callbacks, nb_epoch=nb_epoch,
+    history = model.fit(x=dim_ordering_fix(xtrain), y=y, validation_data=(dim_ordering_fix(xtest), ytest),
+                        callbacks=callbacks, nb_epoch=nb_epoch,
                         batch_size=32)
 
     # save history to CSV
