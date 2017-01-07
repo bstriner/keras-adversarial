@@ -77,6 +77,8 @@ There are many possible strategies for optimizing multiplayer games. `Adversaria
   function.
 * `AdversarialOptimizerSimultaneous` updates each player simultaneously
 * `AdversarialOptimizerAlternating` updates each player in a round-robin
+* `UnrolledAdversarialOptimizer` unrolls updates to stabilize training (only tested in Theano;
+ slow to build graph but runs reasonably fast)
 
 ## Examples
 
