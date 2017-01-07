@@ -6,14 +6,14 @@ mpl.use('Agg')
 import pandas as pd
 import numpy as np
 import os
-from keras.layers import Dense, Reshape, Flatten, Dropout, LeakyReLU, Activation, BatchNormalization
+from keras.layers import Dense, Reshape, Flatten, Dropout, LeakyReLU, Activation, BatchNormalization, SpatialDropout2D
 from keras.layers.convolutional import Convolution2D, UpSampling2D, MaxPooling2D, AveragePooling2D
-from keras.models import Sequential
+from keras.models import Sequential, Model
 from keras.optimizers import Adam
 from keras.callbacks import TensorBoard
 from keras.regularizers import l1l2
 from keras_adversarial import AdversarialModel, ImageGridCallback, simple_gan, gan_targets
-from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
+from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling, fix_names
 import keras.backend as K
 from cifar10_utils import cifar10_data
 from image_utils import dim_ordering_fix, dim_ordering_unfix, dim_ordering_shape
@@ -21,51 +21,60 @@ from image_utils import dim_ordering_fix, dim_ordering_unfix, dim_ordering_shape
 
 def model_generator():
     model = Sequential()
-    nch = 128
+    nch = 256
     reg = lambda: l1l2(l1=1e-7, l2=1e-7)
     h = 5
     model.add(Dense(input_dim=100, output_dim=nch * 4 * 4, W_regularizer=reg()))
-    model.add(BatchNormalization(mode=2))
+    model.add(BatchNormalization(mode=0))
     model.add(Reshape(dim_ordering_shape((nch, 4, 4))))
-    model.add(Convolution2D(nch, h, h, border_mode='same', W_regularizer=reg()))
-    model.add(BatchNormalization(mode=2, axis=1))
+    model.add(Convolution2D(nch/2, h, h, border_mode='same', W_regularizer=reg()))
+    model.add(BatchNormalization(mode=0, axis=1))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
     model.add(Convolution2D(nch / 2, h, h, border_mode='same', W_regularizer=reg()))
-    model.add(BatchNormalization(mode=2, axis=1))
+    model.add(BatchNormalization(mode=0, axis=1))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
-    model.add(Convolution2D(nch / 2, h, h, border_mode='same', W_regularizer=reg()))
-    model.add(BatchNormalization(mode=2, axis=1))
+    model.add(Convolution2D(nch / 4, h, h, border_mode='same', W_regularizer=reg()))
+    model.add(BatchNormalization(mode=0, axis=1))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
     model.add(Convolution2D(3, h, h, border_mode='same', W_regularizer=reg()))
     model.add(Activation('sigmoid'))
-    model.summary()
     return model
 
 
 def model_discriminator():
-    model = Sequential()
     nch = 256
     h = 5
     reg = lambda: l1l2(l1=1e-7, l2=1e-7)
-    model.add(Convolution2D(nch / 4, h, h, border_mode='same', W_regularizer=reg(),
-                            input_shape=dim_ordering_shape((3, 32, 32))))
-    model.add(LeakyReLU(0.2))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Convolution2D(nch / 2, h, h, border_mode='same', W_regularizer=reg()))
-    model.add(LeakyReLU(0.2))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Convolution2D(nch, h, h, border_mode='same', W_regularizer=reg()))
-    model.add(LeakyReLU(0.2))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Convolution2D(1, h, h, border_mode='same', W_regularizer=reg()))
-    model.add(AveragePooling2D(pool_size=(4, 4), border_mode='valid'))
-    model.add(Flatten())
-    model.add(Activation('sigmoid'))
-    model.summary()
-    return model
+
+    c1 = Convolution2D(nch / 4, h, h, border_mode='same', W_regularizer=reg(),
+                  input_shape=dim_ordering_shape((3, 32, 32)))
+    c2 = Convolution2D(nch / 2, h, h, border_mode='same', W_regularizer=reg())
+    c3 = Convolution2D(nch, h, h, border_mode='same', W_regularizer=reg())
+    c4 = Convolution2D(1, h, h, border_mode='same', W_regularizer=reg())
+
+    def m(dropout):
+        model = Sequential()
+        model.add(c1)
+        model.add(SpatialDropout2D(dropout))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(LeakyReLU(0.2))
+        model.add(c2)
+        model.add(SpatialDropout2D(dropout))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(LeakyReLU(0.2))
+        model.add(c3)
+        model.add(SpatialDropout2D(dropout))
+        model.add(MaxPooling2D(pool_size=(2, 2)))
+        model.add(LeakyReLU(0.2))
+        model.add(c4)
+        model.add(AveragePooling2D(pool_size=(4, 4), border_mode='valid'))
+        model.add(Flatten())
+        model.add(Activation('sigmoid'))
+        return model
+    return m
 
 
 def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, discriminator, latent_dim,
@@ -78,11 +87,21 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
     print("Training: {}".format(csvpath))
     # gan (x - > yfake, yreal), z is gaussian generated on GPU
     # can also experiment with uniform_latent_sampling
-    gan = simple_gan(generator, discriminator, normal_latent_sampling((latent_dim,)))
+    d_g = discriminator(0)
+    d_d = discriminator(0.5)
+    generator.summary()
+    d_d.summary()
+    gan_g = simple_gan(generator, d_g, None)
+    gan_d = simple_gan(generator, d_d, None)
+    x = gan_g.inputs[1]
+    z = normal_latent_sampling((latent_dim,))(x)
+    # eliminate z from inputs
+    gan_g = Model([x], fix_names(gan_g([z, x]), gan_g.output_names))
+    gan_d = Model([x], fix_names(gan_d([z, x]), gan_d.output_names))
 
     # build adversarial model
-    model = AdversarialModel(base_model=gan,
-                             player_params=[generator.trainable_weights, discriminator.trainable_weights],
+    model = AdversarialModel(player_models=[gan_g, gan_d],
+                             player_params=[generator.trainable_weights, d_d.trainable_weights],
                              player_names=["generator", "discriminator"])
     model.adversarial_compile(adversarial_optimizer=adversarial_optimizer,
                               player_optimizers=[opt_g, opt_d],

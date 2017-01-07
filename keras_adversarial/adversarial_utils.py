@@ -4,6 +4,7 @@ import keras.backend as K
 from keras.models import Model
 from six import iteritems
 
+
 def build_gan(generator, discriminator, name="gan"):
     """
     Build GAN from generator and discriminator
@@ -35,8 +36,10 @@ def simple_gan(generator, discriminator, latent_sampling):
     # build basic gan
     gan = build_gan(generator, discriminator)
     # generate z on gpu, eliminate one input
-    gan = eliminate_z(gan, latent_sampling)
-    return gan
+    if latent_sampling is None:
+        return gan
+    else:
+        return eliminate_z(gan, latent_sampling)
 
 
 def simple_bigan(generator, encoder, discriminator, latent_sampling=None):
