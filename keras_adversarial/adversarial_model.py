@@ -68,7 +68,7 @@ class AdversarialModel(Model):
         assert (len(player_optimizers) == self.player_count)
 
         self.optimizers = [optimizers.get(optimizer) for optimizer in player_optimizers]
-        self.loss = objectives.get(loss)
+        self.loss = loss
         self.optimizer = None
 
         # Build player models

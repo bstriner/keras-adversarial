@@ -134,7 +134,7 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
 
     # save models
     generator.save(os.path.join(path, "generator.h5"))
-    discriminator.save(os.path.join(path, "discriminator.h5"))
+    d_d.save(os.path.join(path, "discriminator.h5"))
 
 
 def main():
