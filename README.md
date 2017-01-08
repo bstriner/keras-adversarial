@@ -103,6 +103,13 @@ create a GAN in Keras for the CIFAR10 dataset.
   
 ![Example BiGAN](https://github.com/bstriner/keras_adversarial/raw/master/doc/images/bigan-epoch-099.png)
 
+### MNIST Adversarial Autoencoder (AAE)
+
+An AAE is like a cross between a GAN and a Variational Autoencoder (VAE). [example_aae.py](https://github.com/bstriner/keras_adversarial/blob/master/examples/example_aae.py) shows how to
+ create an AAE in Keras.
+  
+![Example AAE](https://github.com/bstriner/keras_adversarial/raw/master/doc/images/aae-epoch-099.png)
+
 ### Unrolled Generative Adversarial Network
 
 [example_gan_unrolled.py](https://github.com/bstriner/keras_adversarial/blob/master/examples/example_gan_unrolled.py)

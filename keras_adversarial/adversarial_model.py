@@ -53,7 +53,7 @@ class AdversarialModel(Model):
             self.layers = player_models
 
 
-    def adversarial_compile(self, adversarial_optimizer, player_optimizers, loss,
+    def adversarial_compile(self, adversarial_optimizer, player_optimizers, loss, compile_kwargs={},
                             **kwargs):
         """
         Configures the learning process.
@@ -73,7 +73,7 @@ class AdversarialModel(Model):
 
         # Build player models
         for opt, model in zip(self.optimizers, self.layers):
-            model.compile(opt, loss=self.loss)
+            model.compile(opt, loss=self.loss, **compile_kwargs)
 
         self.train_function = None
         self.test_function = None
