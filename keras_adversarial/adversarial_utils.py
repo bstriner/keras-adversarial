@@ -3,6 +3,7 @@ import numpy as np
 import keras.backend as K
 from keras.models import Model
 from six import iteritems
+from .backend import unpack_assignment, variable_key
 
 
 def build_gan(generator, discriminator, name="gan"):
@@ -129,16 +130,20 @@ def n_choice(x, n):
 
 def merge_updates(updates):
     """Average repeated updates of the same variable"""
-    upd = {}
-    for k, v in updates:
-        if k not in upd:
-            upd[k] = []
-        upd[k].append(v)
+    merged_updates = {}
+    for update in updates:
+        variable, value = unpack_assignment(update)
+        key = variable_key(variable)
+        if key not in merged_updates:
+            merged_updates[key] = [variable, []]
+        merged_updates[key][1].append(value)
     ret = []
-    for k, v in iteritems(upd):
-        n = len(v)
+    for k, v in iteritems(merged_updates):
+        variable = v[0]
+        values = v[1]
+        n = len(values)
         if n == 1:
-            ret.append((k, v[0]))
+            ret.append(K.update(variable, value[0]))
         else:
-            ret.append((k, sum(v) / n))
+            ret.append(K.update(variable, sum(values) / n))
     return ret
