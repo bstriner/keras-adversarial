@@ -14,6 +14,7 @@ setup(name='keras-adversarial',
       install_requires=['Keras'],
       keywords=['keras', 'gan', 'adversarial', 'multiplayer'],
       license='MIT',
+      long_description=long_description,
       classifiers=[
           # Indicate who your project is intended for
           'Intended Audience :: Developers',
