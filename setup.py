@@ -1,13 +1,13 @@
 from setuptools import setup, find_packages
 
 long_description = open('README.rst').read()
-version = '0.0.2'
+version = '0.0.3'
 
 setup(name='keras-adversarial',
       version=version,
       description='Adversarial models and optimizers for Keras',
       url='https://github.com/bstriner/keras-adversarial',
-      download_url='https://github.com/bstriner/keras-adversarial/tarball/v0.0.2',
+      download_url='https://github.com/bstriner/keras-adversarial/tarball/v{}'.format(version),
       author='Ben Striner',
       author_email='bstriner@gmail.com',
       packages=find_packages(),
