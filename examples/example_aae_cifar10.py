@@ -147,8 +147,8 @@ def example_aae(path, adversarial_optimizer):
     def autoencoder_sampler():
         xsamples = n_choice(xtest, 10)
         xrep = np.repeat(xsamples, 9, axis=0)
-        xgen = dim_ordering_unfix(autoencoder.predict(dim_ordering_fix(xrep))).reshape((10, 9, 3, 32, 32))
-        xsamples = xsamples.reshape((10, 1, 3, 32, 32))
+        xgen = dim_ordering_unfix(autoencoder.predict(xrep)).reshape((10, 9, 3, 32, 32))
+        xsamples = dim_ordering_unfix(xsamples).reshape((10, 1, 3, 32, 32))
         samples = np.concatenate((xsamples, xgen), axis=1)
         samples = samples.transpose((0, 1, 3, 4, 2))
         print("Samples: {}".format(samples.shape))
@@ -163,7 +163,7 @@ def example_aae(path, adversarial_optimizer):
     y = [xtrain, np.ones((n, 1)), np.zeros((n, 1)), xtrain, np.zeros((n, 1)), np.ones((n, 1))]
     ntest = xtest.shape[0]
     ytest = [xtest, np.ones((ntest, 1)), np.zeros((ntest, 1)), xtest, np.zeros((ntest, 1)), np.ones((ntest, 1))]
-    history = model.fit(x=dim_ordering_fix(xtrain), y=y, validation_data=(dim_ordering_fix(xtest), ytest),
+    history = model.fit(x=xtrain, y=y, validation_data=(xtest, ytest),
                         callbacks=[generator_cb, autoencoder_cb],
                         nb_epoch=100, batch_size=32)
 
