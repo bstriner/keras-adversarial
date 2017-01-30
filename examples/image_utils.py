@@ -34,3 +34,8 @@ def dim_ordering_reshape(k, w, **kwargs):
     else:
         return Reshape((w, w, k), **kwargs)
 
+def channel_axis():
+    if K.image_dim_ordering() == 'th':
+        return 1
+    else:
+        return 3
