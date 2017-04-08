@@ -28,10 +28,10 @@ def rps_chart(path, a, b):
     width = 0.35
     pad = 1.0 - 2 * width
     ind = np.arange(n)
-    ba = plt.bar(pad/2 + ind, a, width=width, color='r')
-    bb = plt.bar(pad/2 + ind + width, b, width=width, color='g')
+    ba = plt.bar(pad / 2 + ind, a, width=width, color='r')
+    bb = plt.bar(pad / 2 + ind + width, b, width=width, color='g')
     ax.set_ylabel('Frequency')
-    ax.set_xticks(pad/2 + ind + width)
+    ax.set_xticks(pad / 2 + ind + width)
     ax.set_xticklabels(("Rock", "Paper", "Scissors"))
     fig.legend((ba, bb), ("Player A", "Player B"))
     ax.set_ylim([0, 1])

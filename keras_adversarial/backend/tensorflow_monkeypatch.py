@@ -21,7 +21,8 @@ def update_sub(x, decrement):
 def moving_average_update(variable, value, momentum):
     return (variable, variable * momentum + value * (1. - momentum))
 
-keras.backend.update=update
-keras.backend.update_add=update_add
-keras.backend.update_sub=update_sub
-keras.backend.moving_average_update=moving_average_update
+
+keras.backend.update = update
+keras.backend.update_add = update_add
+keras.backend.update_sub = update_sub
+keras.backend.moving_average_update = moving_average_update

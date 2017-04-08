@@ -1,8 +1,9 @@
-from keras.layers import Activation, Lambda
-import numpy as np
 import keras.backend as K
+import numpy as np
+from keras.layers import Activation, Lambda
 from keras.models import Model
 from six import iteritems
+
 from .backend import unpack_assignment, variable_key
 
 

@@ -3,18 +3,18 @@ import matplotlib as mpl
 # This line allows mpl to run with no DISPLAY defined
 mpl.use('Agg')
 
-from keras.layers import Dense, Reshape, Flatten, Dropout, LeakyReLU, Input, Activation, BatchNormalization
-from keras.models import Sequential, Model
+from keras.layers import Dense, Flatten, Dropout, LeakyReLU, Input, Activation, BatchNormalization
+from keras.models import Model
 from keras.layers.convolutional import Convolution2D, UpSampling2D
 from keras.optimizers import Adam
-from keras.regularizers import l1, l1l2
 from keras.datasets import mnist
 import pandas as pd
 import numpy as np
 import keras.backend as K
 from keras_adversarial import AdversarialModel, ImageGridCallback, simple_gan, gan_targets
-from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling, AdversarialOptimizerAlternating
+from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
 from image_utils import dim_ordering_fix, dim_ordering_input, dim_ordering_reshape, dim_ordering_unfix
+
 
 def leaky_relu(x):
     return K.relu(x, 0.2)
@@ -93,13 +93,11 @@ if __name__ == "__main__":
                               player_optimizers=[Adam(1e-4, decay=1e-4), Adam(1e-3, decay=1e-4)],
                               loss='binary_crossentropy')
 
-
     # train model
     def generator_sampler():
         zsamples = np.random.normal(size=(10 * 10, latent_dim))
         gen = dim_ordering_unfix(generator.predict(zsamples))
         return gen.reshape((10, 10, 28, 28))
-
 
     generator_cb = ImageGridCallback("output/gan_convolutional/epoch-{:03d}.png", generator_sampler)
 

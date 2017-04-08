@@ -6,7 +6,7 @@ import matplotlib as mpl
 # This line allows mpl to run with no DISPLAY defined
 mpl.use('Agg')
 
-from keras.layers import Dense, Reshape, Flatten, Input, merge, Dropout
+from keras.layers import Dense, Reshape, Flatten, Input, merge
 from keras.models import Sequential, Model
 from keras.optimizers import Adam
 from keras.regularizers import l1, l1l2
@@ -14,11 +14,10 @@ import keras.backend as K
 import pandas as pd
 import numpy as np
 
-from keras_adversarial import AdversarialModel, ImageGridCallback, simple_gan, gan_targets, fix_names, n_choice, \
-    simple_bigan
-from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling, AdversarialOptimizerAlternating
+from keras_adversarial import AdversarialModel, ImageGridCallback, fix_names, n_choice
+from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
 from mnist_utils import mnist_data
-from keras.layers import BatchNormalization, LeakyReLU, Activation
+from keras.layers import LeakyReLU, Activation
 import os
 
 

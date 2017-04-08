@@ -1,6 +1,7 @@
+import keras.backend as K
+
 from .adversarial_optimizers import AdversarialOptimizerSimultaneous
 from .backend import unpack_assignments, clone_replace
-import keras.backend as K
 
 
 def unroll(updates, uupdates, depth):

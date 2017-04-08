@@ -1,6 +1,6 @@
 import tensorflow as tf
-from tensorflow.contrib.graph_editor import select
 from six import iterkeys
+from tensorflow.contrib.graph_editor import select
 from tensorflow.contrib.graph_editor import util
 from tensorflow.python.framework import ops as tf_ops
 

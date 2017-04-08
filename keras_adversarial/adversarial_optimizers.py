@@ -1,5 +1,6 @@
-import keras.backend as K
 from abc import ABCMeta, abstractmethod
+
+import keras.backend as K
 
 
 class AdversarialOptimizer(object):

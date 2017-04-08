@@ -11,7 +11,6 @@ from keras.models import Sequential
 from keras.optimizers import Adam
 from keras.regularizers import l1, l1l2
 from keras.callbacks import TensorBoard
-from keras.datasets import mnist
 from keras_adversarial import AdversarialModel, ImageGridCallback, simple_gan, gan_targets
 from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
 import keras.backend as K

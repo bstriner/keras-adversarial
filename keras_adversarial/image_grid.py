@@ -1,6 +1,6 @@
-from matplotlib import pyplot as plt, gridspec
-
 import os
+
+from matplotlib import pyplot as plt, gridspec
 
 
 def write_image_grid(filepath, imgs, figsize=None, cmap='gray'):

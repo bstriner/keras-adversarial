@@ -4,10 +4,10 @@ import matplotlib as mpl
 mpl.use('Agg')
 from example_gan import example_gan
 from keras_adversarial.unrolled_optimizer import UnrolledAdversarialOptimizer
-from keras.optimizers import Adam, SGD, Nadam
+from keras.optimizers import Adam
 from example_gan import model_generator, model_discriminator
-from keras.regularizers import l1l2
 import os
+
 
 def example_gan_unrolled(path, depth_g, depth_d):
     # z \in R^100
@@ -25,11 +25,12 @@ def example_gan_unrolled(path, depth_g, depth_d):
                 latent_dim=latent_dim)
 
 
-if __name__ == "__main__":
-
+def example(name, depth_g, depth_d):
     path = "output/unrolled_gan"
-    def example(name, depth_g, depth_d):
-        example_gan_unrolled(os.path.join(path, name), depth_g, depth_d)
+    example_gan_unrolled(os.path.join(path, name), depth_g, depth_d)
+
+
+if __name__ == "__main__":
     example("k_0_0", 0, 0)
     example("k_8_8", 8, 8)
     example("k_16_16", 16, 16)

@@ -1,6 +1,7 @@
 import numpy as np
 from keras.datasets import cifar10
 
+
 def cifar10_process(x):
     x = x.astype(np.float32) / 255.0
     return x

@@ -1,4 +1,5 @@
 from keras.callbacks import Callback
+
 from .image_grid import write_image_grid
 
 

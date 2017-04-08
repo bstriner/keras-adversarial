@@ -1,8 +1,10 @@
-from keras import backend as K
-from keras.models import Model
-from keras import optimizers, objectives
-import numpy as np
 import itertools
+
+import numpy as np
+from keras import backend as K
+from keras import optimizers
+from keras.models import Model
+
 from .adversarial_utils import fix_names, merge_updates
 
 
@@ -52,7 +54,6 @@ class AdversarialModel(Model):
             assert (len(player_models) == self.player_count)
             self.layers = player_models
 
-
     def adversarial_compile(self, adversarial_optimizer, player_optimizers, loss, compile_kwargs={},
                             **kwargs):
         """
@@ -81,6 +82,7 @@ class AdversarialModel(Model):
         # Inputs are same for each model
         def filter_inputs(inputs):
             return inputs
+
         self.internal_input_shapes = filter_inputs(self.layers[0].internal_input_shapes)
         self.input_names = filter_inputs(self.layers[0].input_names)
         self.inputs = filter_inputs(self.layers[0].inputs)
@@ -132,10 +134,10 @@ class AdversarialModel(Model):
             inputs = self.inputs + self.targets + self.sample_weights
             if self.uses_learning_phase and not isinstance(K.learning_phase(), int):
                 inputs += [K.learning_phase()]
-            outputs = [self.total_loss] + \
-                      list(itertools.chain.from_iterable(
-                          [model.total_loss] + model.metrics_tensors
-                          for model in self.layers))
+            outputs = [self.total_loss]
+            outputs += list(itertools.chain.from_iterable(
+                [model.total_loss] + model.metrics_tensors
+                for model in self.layers))
 
             # returns loss and metrics. Updates weights at each call.
             self.train_function = self.adversarial_optimizer.make_train_function(inputs, outputs,
@@ -155,10 +157,10 @@ class AdversarialModel(Model):
             inputs = self.inputs + self.targets + self.sample_weights
             if self.uses_learning_phase and not isinstance(K.learning_phase(), int):
                 inputs += [K.learning_phase()]
-            outputs = [self.total_loss] + \
-                      list(itertools.chain.from_iterable(
-                          [model.total_loss] + model.metrics_tensors
-                          for model in self.layers))
+            outputs = [self.total_loss]
+            outputs += list(itertools.chain.from_iterable(
+                [model.total_loss] + model.metrics_tensors
+                for model in self.layers))
             self.test_function = K.function(inputs,
                                             outputs,
                                             updates=self.state_updates,

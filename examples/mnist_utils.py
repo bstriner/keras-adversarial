@@ -1,6 +1,7 @@
 import numpy as np
 from keras.datasets import mnist
 
+
 def mnist_process(x):
     x = x.astype(np.float32) / 255.0
     return x

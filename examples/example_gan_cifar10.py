@@ -6,7 +6,7 @@ mpl.use('Agg')
 import pandas as pd
 import numpy as np
 import os
-from keras.layers import Dense, Reshape, Flatten, Dropout, LeakyReLU, Activation, BatchNormalization, SpatialDropout2D
+from keras.layers import Dense, Reshape, Flatten, LeakyReLU, Activation, BatchNormalization, SpatialDropout2D
 from keras.layers.convolutional import Convolution2D, UpSampling2D, MaxPooling2D, AveragePooling2D
 from keras.models import Sequential, Model
 from keras.optimizers import Adam
@@ -27,7 +27,7 @@ def model_generator():
     model.add(Dense(input_dim=100, output_dim=nch * 4 * 4, W_regularizer=reg()))
     model.add(BatchNormalization(mode=0))
     model.add(Reshape(dim_ordering_shape((nch, 4, 4))))
-    model.add(Convolution2D(nch/2, h, h, border_mode='same', W_regularizer=reg()))
+    model.add(Convolution2D(nch / 2, h, h, border_mode='same', W_regularizer=reg()))
     model.add(BatchNormalization(mode=0, axis=1))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
@@ -50,7 +50,7 @@ def model_discriminator():
     reg = lambda: l1l2(l1=1e-7, l2=1e-7)
 
     c1 = Convolution2D(nch / 4, h, h, border_mode='same', W_regularizer=reg(),
-                  input_shape=dim_ordering_shape((3, 32, 32)))
+                       input_shape=dim_ordering_shape((3, 32, 32)))
     c2 = Convolution2D(nch / 2, h, h, border_mode='same', W_regularizer=reg())
     c3 = Convolution2D(nch, h, h, border_mode='same', W_regularizer=reg())
     c4 = Convolution2D(1, h, h, border_mode='same', W_regularizer=reg())
@@ -74,6 +74,7 @@ def model_discriminator():
         model.add(Flatten())
         model.add(Activation('sigmoid'))
         return model
+
     return m
 
 

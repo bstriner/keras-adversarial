@@ -7,10 +7,8 @@ from keras_adversarial.unrolled_optimizer import UnrolledAdversarialOptimizer
 from keras.optimizers import Adam
 from example_gan import model_generator, model_discriminator
 from keras_adversarial import gan_targets_hinge
-from keras.models import Sequential
-from keras.layers import Flatten, Dense, Dropout, LeakyReLU, BatchNormalization
-from keras.regularizers import l1l2
 import os
+
 
 def example_gan_unrolled_hinge(path, depth_g, depth_d, clipvalue=2.0):
     # z \in R^100
@@ -29,10 +27,12 @@ def example_gan_unrolled_hinge(path, depth_g, depth_d, clipvalue=2.0):
                 latent_dim=latent_dim, loss="squared_hinge", targets=gan_targets_hinge)
 
 
-if __name__ == "__main__":
+def example(name, depth_g, depth_d, clipvalue):
     path = "output/unrolled_gan_hinge"
-    def example(name, depth_g, depth_d, clipvalue):
-        example_gan_unrolled_hinge(os.path.join(path, name), depth_g, depth_d, clipvalue)
+    example_gan_unrolled_hinge(os.path.join(path, name), depth_g, depth_d, clipvalue)
+
+
+if __name__ == "__main__":
     example("k_0_0", 0, 0)
     example("k_8_8_clip_2", 8, 8, 2)
     example("k_8_8_clip_0.5", 8, 8, 0.5)
@@ -46,4 +46,3 @@ if __name__ == "__main__":
     example("k_2_0", 2, 0)
     example("k_4_0", 4, 0)
     example("k_8_0", 8, 0)
-

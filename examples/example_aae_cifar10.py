@@ -6,26 +6,25 @@ import matplotlib as mpl
 # This line allows mpl to run with no DISPLAY defined
 mpl.use('Agg')
 
-from keras.layers import Dense, Reshape, Flatten, Dropout, LeakyReLU, Activation, BatchNormalization, SpatialDropout2D
+from keras.layers import Dense, Reshape, Flatten, SpatialDropout2D
 from keras.layers import Input, merge
-from keras.layers.convolutional import Convolution2D, UpSampling2D, MaxPooling2D, AveragePooling2D
+from keras.layers.convolutional import Convolution2D, UpSampling2D, MaxPooling2D
 from keras.models import Sequential, Model
 from keras.optimizers import Adam
-from keras.regularizers import l1, l1l2
+from keras.regularizers import l1l2
 import keras.backend as K
 import pandas as pd
 import numpy as np
 
-from keras_adversarial import AdversarialModel, ImageGridCallback, simple_gan, gan_targets, fix_names, n_choice, \
-    simple_bigan
-from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling, AdversarialOptimizerAlternating
+from keras_adversarial import AdversarialModel, ImageGridCallback, fix_names, n_choice
+from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
 from cifar10_utils import cifar10_data
 from keras.layers import BatchNormalization, LeakyReLU, Activation
-from image_utils import dim_ordering_fix, dim_ordering_unfix, dim_ordering_shape, channel_axis
+from image_utils import dim_ordering_unfix, dim_ordering_shape
 import os
 
 
-def model_generator(latent_dim, nch = 512, dropout=0.5, reg = lambda: l1l2(l1=1e-7, l2=1e-7)):
+def model_generator(latent_dim, nch=512, dropout=0.5, reg=lambda: l1l2(l1=1e-7, l2=1e-7)):
     model = Sequential(name="decoder")
     h = 5
     model.add(Dense(input_dim=latent_dim, output_dim=nch * 4 * 4, W_regularizer=reg()))
