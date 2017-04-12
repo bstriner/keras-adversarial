@@ -57,7 +57,7 @@ def gan_model_test():
     n = batch_size * 8
     x = np.random.random((n, input_dim))
     y = gan_targets(n)
-    fit(model, x, y, epochs=5, batch_size=batch_size)
+    fit(model, x, y, nb_epoch=3, batch_size=batch_size)
 
 
 if __name__ == "__main__":

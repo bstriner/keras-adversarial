@@ -127,8 +127,6 @@ class AdversarialModel(Model):
         self._feed_sample_weights = self.sample_weights
         self._feed_sample_weight_modes = self.sample_weight_modes
 
-
-
     @property
     def constraints(self):
         return list(itertools.chain.from_iterable(model.constraints for model in self.layers))

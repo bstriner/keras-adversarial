@@ -7,13 +7,13 @@ import pandas as pd
 import numpy as np
 import os
 from keras.layers import Reshape, Flatten, LeakyReLU, Activation, SpatialDropout2D
-from keras.layers.convolutional import UpSampling2D, MaxPooling2D, AveragePooling2D
+from keras.layers.convolutional import UpSampling2D, MaxPooling2D
 from keras.models import Sequential, Model
 from keras.optimizers import Adam
 from keras.callbacks import TensorBoard
 from keras_adversarial import AdversarialModel, ImageGridCallback, simple_gan, gan_targets
 from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling, fix_names
-from keras_adversarial.legacy import Dense, BatchNormalization, fit, l1l2, Convolution2D
+from keras_adversarial.legacy import Dense, BatchNormalization, fit, l1l2, Convolution2D, AveragePooling2D
 import keras.backend as K
 from cifar10_utils import cifar10_data
 from image_utils import dim_ordering_fix, dim_ordering_unfix, dim_ordering_shape
@@ -72,7 +72,6 @@ def model_discriminator():
     return model
 
 
-
 def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, discriminator, latent_dim,
                 targets=gan_targets, loss='binary_crossentropy'):
     csvpath = os.path.join(path, "history.csv")
@@ -114,9 +113,9 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
     if K.backend() == "tensorflow":
         callbacks.append(
             TensorBoard(log_dir=os.path.join(path, 'logs'), histogram_freq=0, write_graph=True, write_images=True))
-    history =fit(model, x=dim_ordering_fix(xtrain), y=y, validation_data=(dim_ordering_fix(xtest), ytest),
-                        callbacks=callbacks, nb_epoch=nb_epoch,
-                        batch_size=32)
+    history = fit(model, x=dim_ordering_fix(xtrain), y=y, validation_data=(dim_ordering_fix(xtest), ytest),
+                  callbacks=callbacks, nb_epoch=nb_epoch,
+                  batch_size=32)
 
     # save history to CSV
     df = pd.DataFrame(history.history)
