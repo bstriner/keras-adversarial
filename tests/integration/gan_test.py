@@ -1,11 +1,11 @@
-import pytest
 import numpy as np
-from keras.layers import Dense, Reshape, Flatten, Dropout, LeakyReLU, Activation, BatchNormalization
+import pytest
+from keras.layers import LeakyReLU, Activation
 from keras.models import Sequential
 from keras.optimizers import Adam
-from keras_adversarial import AdversarialModel, ImageGridCallback, simple_gan, gan_targets
+from keras_adversarial import AdversarialModel, simple_gan, gan_targets
 from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
-from keras_adversarial.legacy import fit
+from keras_adversarial.legacy import fit, Dense
 
 
 def model_generator(latent_dim, input_dim, hidden_dim=256):

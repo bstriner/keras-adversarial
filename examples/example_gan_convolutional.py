@@ -11,7 +11,8 @@ from keras.datasets import mnist
 import pandas as pd
 import numpy as np
 import keras.backend as K
-from keras_adversarial import AdversarialModel, ImageGridCallback, simple_gan, gan_targets
+from keras_adversarial.image_grid_callback import ImageGridCallback
+from keras_adversarial import AdversarialModel, simple_gan, gan_targets
 from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
 from image_utils import dim_ordering_fix, dim_ordering_input, dim_ordering_reshape, dim_ordering_unfix
 
@@ -93,11 +94,13 @@ if __name__ == "__main__":
                               player_optimizers=[Adam(1e-4, decay=1e-4), Adam(1e-3, decay=1e-4)],
                               loss='binary_crossentropy')
 
+
     # train model
     def generator_sampler():
         zsamples = np.random.normal(size=(10 * 10, latent_dim))
         gen = dim_ordering_unfix(generator.predict(zsamples))
         return gen.reshape((10, 10, 28, 28))
+
 
     generator_cb = ImageGridCallback("output/gan_convolutional/epoch-{:03d}.png", generator_sampler)
 

@@ -10,9 +10,8 @@ from keras.regularizers import l1, l1l2
 import keras.backend as K
 import pandas as pd
 import numpy as np
-
-from keras_adversarial import AdversarialModel, ImageGridCallback, gan_targets, fix_names, n_choice, \
-    simple_bigan
+from keras_adversarial.image_grid_callback import ImageGridCallback
+from keras_adversarial import AdversarialModel, gan_targets, fix_names, n_choice, simple_bigan
 from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
 from mnist_utils import mnist_data
 from example_gan import model_generator

@@ -6,13 +6,14 @@ mpl.use('Agg')
 import pandas as pd
 import numpy as np
 import os
-from keras.layers import Reshape, Flatten, Dropout, LeakyReLU, Activation
+from keras.layers import Reshape, Flatten, LeakyReLU, Activation
 from keras.models import Sequential
 from keras.optimizers import Adam
 from keras.callbacks import TensorBoard
-from keras_adversarial import AdversarialModel, ImageGridCallback, simple_gan, gan_targets
+from keras_adversarial.image_grid_callback import ImageGridCallback
+from keras_adversarial import AdversarialModel, simple_gan, gan_targets
 from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
-from keras_adversarial.legacy import l1l2, Dense, BatchNormalization, fit
+from keras_adversarial.legacy import l1l2, Dense, fit
 import keras.backend as K
 from mnist_utils import mnist_data
 
