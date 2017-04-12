@@ -45,6 +45,7 @@ class AdversarialOptimizerSimultaneous(object):
 class AdversarialOptimizerAlternating(object):
     """
     Perform round-robin updates for each player in the game. Each player takes a turn.
+    Take each batch and run that batch through each of the models. All models are trained on each batch.
     """
 
     def __init__(self, reverse=False):
@@ -70,5 +71,37 @@ class AdversarialOptimizerAlternating(object):
                 func(_inputs)
             # return output
             return output_func(_inputs)
+
+        return train
+
+
+class AdversarialOptimizerScheduled(object):
+    """
+    Perform updates according to a schedule.
+    For example, [0,0,1] will train player 0 on batches 0,1,3,4,6,7... and player 1 on batches 2,5,8...
+    """
+
+    def __init__(self, schedule):
+        """
+        Initialize optimizer.
+        :param schedule: Schedule of updates
+        """
+        assert len(schedule) > 0
+        self.schedule = schedule
+        self.iter = 0
+
+    def make_train_function(self, inputs, outputs, losses, params, optimizers, constraints, model_updates,
+                            function_kwargs):
+        funcs = []
+        for loss, param, optimizer, constraint in zip(losses, params, optimizers, constraints):
+            updates = optimizer.get_updates(param, constraint, loss)
+            funcs.append(K.function(inputs, outputs, updates=updates + model_updates, **function_kwargs))
+
+        def train(_inputs):
+            self.iter += 1
+            if self.iter == len(self.schedule):
+                self.iter = 0
+            func = funcs[self.schedule[self.iter]]
+            return func(_inputs)
 
         return train

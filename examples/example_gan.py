@@ -12,7 +12,7 @@ from keras.optimizers import Adam
 from keras.callbacks import TensorBoard
 from keras_adversarial.image_grid_callback import ImageGridCallback
 from keras_adversarial import AdversarialModel, simple_gan, gan_targets
-from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
+from keras_adversarial import normal_latent_sampling, AdversarialOptimizerSimultaneous
 from keras_adversarial.legacy import l1l2, Dense, fit
 import keras.backend as K
 from mnist_utils import mnist_data
