@@ -27,11 +27,11 @@ def l1l2(l1=0, l2=0):
         return keras.regularizers.l1l2(l1, l2)
 
 
-def Dense(units, W_regularizer=None, **kwargs):
+def Dense(units, W_regularizer=None, W_initializer='glorot_uniform', **kwargs):
     if keras_2:
-        return keras.layers.Dense(units, kernel_regularizer=W_regularizer, **kwargs)
+        return keras.layers.Dense(units, kernel_regularizer=W_regularizer, kernel_initializer=W_initializer, **kwargs)
     else:
-        return keras.layers.Dense(units, W_regularizer=W_regularizer, **kwargs)
+        return keras.layers.Dense(units, W_regularizer=W_regularizer, W_initializer=W_initializer, **kwargs)
 
 
 def BatchNormalization(mode=0, **kwargs):
@@ -41,12 +41,15 @@ def BatchNormalization(mode=0, **kwargs):
         return keras.layers.BatchNormalization(mode=mode, **kwargs)
 
 
-def Convolution2D(units, w, h, W_regularizer=None, border_mode='same', **kwargs):
+def Convolution2D(units, w, h, W_regularizer=None, W_initializer='glorot_uniform', border_mode='same', **kwargs):
     if keras_2:
         return keras.layers.Convolution2D(units, (w, h), padding=border_mode, kernel_regularizer=W_regularizer,
+                                          kernel_initializer=W_initializer,
                                           **kwargs)
     else:
-        return keras.layers.Convolution2D(units, w, h, border_mode=border_mode, W_regularizer=W_regularizer, **kwargs)
+        return keras.layers.Convolution2D(units, w, h, border_mode=border_mode, W_regularizer=W_regularizer,
+                                          W_initializer=W_initializer,
+                                          **kwargs)
 
 
 def AveragePooling2D(pool_size, border_mode='valid', **kwargs):
