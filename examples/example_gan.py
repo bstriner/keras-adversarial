@@ -6,41 +6,24 @@ mpl.use('Agg')
 import pandas as pd
 import numpy as np
 import os
-from keras.layers import Dense, Reshape, Flatten, Dropout, LeakyReLU, Activation, BatchNormalization
+from keras.layers import Reshape, Flatten, Dropout, LeakyReLU, Activation
 from keras.models import Sequential
 from keras.optimizers import Adam
-from keras.regularizers import l1, l1l2
 from keras.callbacks import TensorBoard
 from keras_adversarial import AdversarialModel, ImageGridCallback, simple_gan, gan_targets
 from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
+from keras_adversarial.legacy import l1l2, Dense, BatchNormalization, fit
 import keras.backend as K
 from mnist_utils import mnist_data
 
 
-def batch_norm(batch_norm_mode):
-    if batch_norm_mode >= 0:
-        return BatchNormalization(mode=batch_norm_mode)
-    else:
-        return Activation('linear')
-
-
-def dropout_layer(dropout):
-    if (dropout > 0):
-        return Dropout(dropout)
-    else:
-        return Activation('linear')
-
-
-def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-5), batch_norm_mode=0):
+def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1l2(1e-5, 1e-5)):
     return Sequential([
         Dense(hidden_dim / 4, name="generator_h1", input_dim=latent_dim, W_regularizer=reg()),
-        batch_norm(batch_norm_mode),
         LeakyReLU(0.2),
         Dense(hidden_dim / 2, name="generator_h2", W_regularizer=reg()),
-        batch_norm(batch_norm_mode),
         LeakyReLU(0.2),
         Dense(hidden_dim, name="generator_h3", W_regularizer=reg()),
-        batch_norm(batch_norm_mode),
         LeakyReLU(0.2),
         Dense(np.prod(input_shape), name="generator_x_flat", W_regularizer=reg()),
         Activation('sigmoid'),
@@ -48,22 +31,15 @@ def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-
         name="generator")
 
 
-def model_discriminator(input_shape, hidden_dim=1024, reg=lambda: l1l2(1e-5, 1e-5), dropout=0.5, batch_norm_mode=1,
-                        output_activation="sigmoid"):
+def model_discriminator(input_shape, hidden_dim=1024, reg=lambda: l1l2(1e-5, 1e-5), output_activation="sigmoid"):
     return Sequential([
         Flatten(name="discriminator_flatten", input_shape=input_shape),
         Dense(hidden_dim, name="discriminator_h1", W_regularizer=reg()),
-        batch_norm(batch_norm_mode),
         LeakyReLU(0.2),
-        dropout_layer(dropout),
         Dense(hidden_dim / 2, name="discriminator_h2", W_regularizer=reg()),
-        batch_norm(batch_norm_mode),
         LeakyReLU(0.2),
-        dropout_layer(dropout),
         Dense(hidden_dim / 4, name="discriminator_h3", W_regularizer=reg()),
-        batch_norm(batch_norm_mode),
         LeakyReLU(0.2),
-        dropout_layer(dropout),
         Dense(1, name="discriminator_y", W_regularizer=reg()),
         Activation(output_activation)],
         name="discriminator")
@@ -109,8 +85,7 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
     if K.backend() == "tensorflow":
         callbacks.append(
             TensorBoard(log_dir=os.path.join(path, 'logs'), histogram_freq=0, write_graph=True, write_images=True))
-    history = model.fit(x=xtrain, y=y, validation_data=(xtest, ytest), callbacks=callbacks, nb_epoch=nb_epoch,
-                        batch_size=32)
+    history=fit(model, x=xtrain, y=y, validation_data=(xtest, ytest), callbacks=callbacks, nb_epoch=nb_epoch, batch_size=32)
 
     # save history to CSV
     df = pd.DataFrame(history.history)
