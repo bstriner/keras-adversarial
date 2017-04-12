@@ -31,7 +31,7 @@ def Dense(units, W_regularizer=None, W_initializer='glorot_uniform', **kwargs):
     if keras_2:
         return keras.layers.Dense(units, kernel_regularizer=W_regularizer, kernel_initializer=W_initializer, **kwargs)
     else:
-        return keras.layers.Dense(units, W_regularizer=W_regularizer, W_initializer=W_initializer, **kwargs)
+        return keras.layers.Dense(units, W_regularizer=W_regularizer, init=W_initializer, **kwargs)
 
 
 def BatchNormalization(mode=0, **kwargs):
@@ -48,7 +48,7 @@ def Convolution2D(units, w, h, W_regularizer=None, W_initializer='glorot_uniform
                                           **kwargs)
     else:
         return keras.layers.Convolution2D(units, w, h, border_mode=border_mode, W_regularizer=W_regularizer,
-                                          W_initializer=W_initializer,
+                                          init=W_initializer,
                                           **kwargs)
 
 
