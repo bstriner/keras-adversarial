@@ -95,6 +95,7 @@ class AdversarialModel(Model):
 
         self.internal_output_shapes = collect(lambda m: m.internal_output_shapes)
         self.loss_functions = collect(lambda m: m.loss_functions)
+
         self.targets = collect(lambda m: m.targets)
         self.outputs = collect(lambda m: m.outputs)
         self.sample_weights = collect(lambda m: m.sample_weights)
@@ -114,6 +115,17 @@ class AdversarialModel(Model):
         self.total_loss = np.float32(0)
         for model in models:
             self.total_loss += model.total_loss
+
+        # Keras-2
+        self._feed_loss_fns = self.loss_functions
+        self._feed_inputs = self.inputs
+        self._feed_input_names = self.input_names
+        self._feed_input_shapes = self.internal_input_shapes
+        self._feed_outputs = self.outputs
+        self._feed_output_names = self.output_names
+        self._feed_output_shapes = self.internal_output_shapes
+        self._feed_sample_weights = self.sample_weights
+        self._feed_sample_weight_modes = self.sample_weight_modes
 
     @property
     def constraints(self):

@@ -6,14 +6,16 @@ mpl.use('Agg')
 import pandas as pd
 import numpy as np
 import os
-from keras.layers import Dense, Reshape, Flatten, LeakyReLU, Activation, BatchNormalization, SpatialDropout2D
-from keras.layers.convolutional import Convolution2D, UpSampling2D, MaxPooling2D, AveragePooling2D
-from keras.models import Sequential, Model
+from keras.layers import Reshape, Flatten, LeakyReLU, Activation
+from keras.layers.convolutional import UpSampling2D, MaxPooling2D
+from keras.models import Sequential
 from keras.optimizers import Adam
 from keras.callbacks import TensorBoard
-from keras.regularizers import l1l2
-from keras_adversarial import AdversarialModel, ImageGridCallback, simple_gan, gan_targets
-from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling, fix_names
+from keras_adversarial.image_grid_callback import ImageGridCallback
+
+from keras_adversarial import AdversarialModel, simple_gan, gan_targets
+from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
+from keras_adversarial.legacy import Dense, BatchNormalization, fit, l1l2, Convolution2D, AveragePooling2D
 import keras.backend as K
 from cifar10_utils import cifar10_data
 from image_utils import dim_ordering_fix, dim_ordering_unfix, dim_ordering_shape
@@ -24,7 +26,7 @@ def model_generator():
     nch = 256
     reg = lambda: l1l2(l1=1e-7, l2=1e-7)
     h = 5
-    model.add(Dense(input_dim=100, output_dim=nch * 4 * 4, W_regularizer=reg()))
+    model.add(Dense(nch * 4 * 4, input_dim=100, W_regularizer=reg()))
     model.add(BatchNormalization(mode=0))
     model.add(Reshape(dim_ordering_shape((nch, 4, 4))))
     model.add(Convolution2D(nch / 2, h, h, border_mode='same', W_regularizer=reg()))
@@ -55,27 +57,21 @@ def model_discriminator():
     c3 = Convolution2D(nch, h, h, border_mode='same', W_regularizer=reg())
     c4 = Convolution2D(1, h, h, border_mode='same', W_regularizer=reg())
 
-    def m(dropout):
-        model = Sequential()
-        model.add(c1)
-        model.add(SpatialDropout2D(dropout))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        model.add(LeakyReLU(0.2))
-        model.add(c2)
-        model.add(SpatialDropout2D(dropout))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        model.add(LeakyReLU(0.2))
-        model.add(c3)
-        model.add(SpatialDropout2D(dropout))
-        model.add(MaxPooling2D(pool_size=(2, 2)))
-        model.add(LeakyReLU(0.2))
-        model.add(c4)
-        model.add(AveragePooling2D(pool_size=(4, 4), border_mode='valid'))
-        model.add(Flatten())
-        model.add(Activation('sigmoid'))
-        return model
-
-    return m
+    model = Sequential()
+    model.add(c1)
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(LeakyReLU(0.2))
+    model.add(c2)
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(LeakyReLU(0.2))
+    model.add(c3)
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(LeakyReLU(0.2))
+    model.add(c4)
+    model.add(AveragePooling2D(pool_size=(4, 4), border_mode='valid'))
+    model.add(Flatten())
+    model.add(Activation('sigmoid'))
+    return model
 
 
 def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, discriminator, latent_dim,
@@ -88,21 +84,15 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
     print("Training: {}".format(csvpath))
     # gan (x - > yfake, yreal), z is gaussian generated on GPU
     # can also experiment with uniform_latent_sampling
-    d_g = discriminator(0)
-    d_d = discriminator(0.5)
     generator.summary()
-    d_d.summary()
-    gan_g = simple_gan(generator, d_g, None)
-    gan_d = simple_gan(generator, d_d, None)
-    x = gan_g.inputs[1]
-    z = normal_latent_sampling((latent_dim,))(x)
-    # eliminate z from inputs
-    gan_g = Model([x], fix_names(gan_g([z, x]), gan_g.output_names))
-    gan_d = Model([x], fix_names(gan_d([z, x]), gan_d.output_names))
+    discriminator.summary()
+    gan = simple_gan(generator=generator,
+                     discriminator=discriminator,
+                     latent_sampling=normal_latent_sampling((latent_dim,)))
 
     # build adversarial model
-    model = AdversarialModel(player_models=[gan_g, gan_d],
-                             player_params=[generator.trainable_weights, d_d.trainable_weights],
+    model = AdversarialModel(base_model=gan,
+                             player_params=[generator.trainable_weights, discriminator.trainable_weights],
                              player_names=["generator", "discriminator"])
     model.adversarial_compile(adversarial_optimizer=adversarial_optimizer,
                               player_optimizers=[opt_g, opt_d],
@@ -125,9 +115,9 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
     if K.backend() == "tensorflow":
         callbacks.append(
             TensorBoard(log_dir=os.path.join(path, 'logs'), histogram_freq=0, write_graph=True, write_images=True))
-    history = model.fit(x=dim_ordering_fix(xtrain), y=y, validation_data=(dim_ordering_fix(xtest), ytest),
-                        callbacks=callbacks, nb_epoch=nb_epoch,
-                        batch_size=32)
+    history = fit(model, x=dim_ordering_fix(xtrain), y=y, validation_data=(dim_ordering_fix(xtest), ytest),
+                  callbacks=callbacks, nb_epoch=nb_epoch,
+                  batch_size=32)
 
     # save history to CSV
     df = pd.DataFrame(history.history)
@@ -135,7 +125,7 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
 
     # save models
     generator.save(os.path.join(path, "generator.h5"))
-    d_d.save(os.path.join(path, "discriminator.h5"))
+    discriminator.save(os.path.join(path, "discriminator.h5"))
 
 
 def main():
