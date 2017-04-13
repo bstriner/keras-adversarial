@@ -92,6 +92,7 @@ Adversarial Optimizers
 There are many possible strategies for optimizing multiplayer games.
 ``AdversarialOptimizer`` is a base class that abstracts those strategies
 and is responsible for creating the training function.
+
 - ``AdversarialOptimizerSimultaneous`` updates each player simultaneously on each batch.
 - ``AdversarialOptimizerAlternating`` updates each player in a round-robin.
   Take each batch and run that batch through each of the models. All models are trained on each batch.
