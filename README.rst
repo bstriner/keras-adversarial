@@ -74,26 +74,31 @@ Adversarial models can be trained using ``fit`` and callbacks just like
 any other Keras model. Just make sure to provide the correct targets in
 the correct order.
 
-For example, given simple GAN named ``gan``: \* Inputs: ``[x]`` \*
-Targets: ``[y_fake, y_real]`` \* Metrics:
-``[loss, loss_y_fake, loss_y_real]``
+For example, given simple GAN named ``gan``:
 
-``AdversarialModel(base_model=gan, player_names=['g', 'd']...)`` will
-have: \* Inputs: ``[x]`` \* Targets:
-``[g_y_fake, g_y_real, d_y_fake, d_y_real]`` \* Metrics:
-``[loss, g_loss, g_loss_y_fake, g_loss_y_real, d_loss, d_loss_y_fake, d_loss_y_real]``
+- Inputs: ``[x]``
+- Targets: ``[y_fake, y_real]``
+- Metrics: ``[loss, loss_y_fake, loss_y_real]``
+
+``AdversarialModel(base_model=gan, player_names=['g', 'd']...)`` will have:
+
+- Inputs: ``[x]``
+- Targets: ``[g_y_fake, g_y_real, d_y_fake, d_y_real]``
+- Metrics: ``[loss, g_loss, g_loss_y_fake, g_loss_y_real, d_loss, d_loss_y_fake, d_loss_y_real]``
 
 Adversarial Optimizers
 ----------------------
 
 There are many possible strategies for optimizing multiplayer games.
 ``AdversarialOptimizer`` is a base class that abstracts those strategies
-and is responsible for creating the training function. \*
-``AdversarialOptimizerSimultaneous`` updates each player simultaneously
-\* ``AdversarialOptimizerAlternating`` updates each player in a
-round-robin \* ``UnrolledAdversarialOptimizer`` unrolls updates to
-stabilize training (only tested in Theano; slow to build graph but runs
-reasonably fast)
+and is responsible for creating the training function.
+- ``AdversarialOptimizerSimultaneous`` updates each player simultaneously on each batch.
+- ``AdversarialOptimizerAlternating`` updates each player in a round-robin.
+  Take each batch and run that batch through each of the models. All models are trained on each batch.
+- ``AdversarialOptimizerScheduled`` passes each batch to a different player according to a schedule.
+  ``[1,1,0]`` would mean train player 1 on batches 0,1,3,4,6,7,etc. and train player 0 on batches 2,5,8,etc.
+- ``UnrolledAdversarialOptimizer`` unrolls updates to stabilize training
+  (only tested in Theano; slow to build graph but runs reasonably fast)
 
 Examples
 --------
