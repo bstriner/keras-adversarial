@@ -6,42 +6,41 @@ import matplotlib as mpl
 # This line allows mpl to run with no DISPLAY defined
 mpl.use('Agg')
 
-from keras.layers import Dense, Reshape, Flatten, SpatialDropout2D
+from keras.layers import Reshape, Flatten, SpatialDropout2D, Lambda
 from keras.layers import Input, merge
-from keras.layers.convolutional import Convolution2D, UpSampling2D, MaxPooling2D
+from keras.layers.convolutional import UpSampling2D, MaxPooling2D
 from keras.models import Sequential, Model
 from keras.optimizers import Adam
-from keras.regularizers import l1l2
 import keras.backend as K
 import pandas as pd
 import numpy as np
 from keras_adversarial.image_grid_callback import ImageGridCallback
-
+from keras_adversarial.legacy import l1l2, Dense, BatchNormalization, fit, Convolution2D
 from keras_adversarial import AdversarialModel, fix_names, n_choice
 from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
 from cifar10_utils import cifar10_data
-from keras.layers import BatchNormalization, LeakyReLU, Activation
+from keras.layers import LeakyReLU, Activation
 from image_utils import dim_ordering_unfix, dim_ordering_shape
 import os
 
 
-def model_generator(latent_dim, nch=512, dropout=0.5, reg=lambda: l1l2(l1=1e-7, l2=1e-7)):
+def model_generator(latent_dim, units=512, dropout=0.5, reg=lambda: l1l2(l1=1e-7, l2=1e-7)):
     model = Sequential(name="decoder")
     h = 5
-    model.add(Dense(input_dim=latent_dim, output_dim=nch * 4 * 4, W_regularizer=reg()))
-    model.add(Reshape(dim_ordering_shape((nch, 4, 4))))
-    model.add(SpatialDropout2D(dropout))
+    model.add(Dense(units * 4 * 4, input_dim=latent_dim, W_regularizer=reg()))
+    model.add(Reshape(dim_ordering_shape((units, 4, 4))))
+    #model.add(SpatialDropout2D(dropout))
     model.add(LeakyReLU(0.2))
-    model.add(Convolution2D(nch / 2, h, h, border_mode='same', W_regularizer=reg()))
-    model.add(SpatialDropout2D(dropout))
-    model.add(LeakyReLU(0.2))
-    model.add(UpSampling2D(size=(2, 2)))
-    model.add(Convolution2D(nch / 2, h, h, border_mode='same', W_regularizer=reg()))
-    model.add(SpatialDropout2D(dropout))
+    model.add(Convolution2D(units / 2, h, h, border_mode='same', W_regularizer=reg()))
+    #model.add(SpatialDropout2D(dropout))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
-    model.add(Convolution2D(nch / 4, h, h, border_mode='same', W_regularizer=reg()))
-    model.add(SpatialDropout2D(dropout))
+    model.add(Convolution2D(units / 2, h, h, border_mode='same', W_regularizer=reg()))
+    #model.add(SpatialDropout2D(dropout))
+    model.add(LeakyReLU(0.2))
+    model.add(UpSampling2D(size=(2, 2)))
+    model.add(Convolution2D(units / 4, h, h, border_mode='same', W_regularizer=reg()))
+    #model.add(SpatialDropout2D(dropout))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
     model.add(Convolution2D(3, h, h, border_mode='same', W_regularizer=reg()))
@@ -49,44 +48,44 @@ def model_generator(latent_dim, nch=512, dropout=0.5, reg=lambda: l1l2(l1=1e-7, 
     return model
 
 
-def model_encoder(latent_dim, input_shape, nch=512, reg=lambda: l1l2(l1=1e-7, l2=1e-7), dropout=0.5):
+def model_encoder(latent_dim, input_shape, units=512, reg=lambda: l1l2(l1=1e-7, l2=1e-7), dropout=0.5):
     k = 5
     x = Input(input_shape)
-    h = Convolution2D(nch / 4, k, k, border_mode='same', W_regularizer=reg())(x)
-    h = SpatialDropout2D(dropout)(h)
+    h = Convolution2D(units / 4, k, k, border_mode='same', W_regularizer=reg())(x)
+    #h = SpatialDropout2D(dropout)(h)
     h = MaxPooling2D(pool_size=(2, 2))(h)
     h = LeakyReLU(0.2)(h)
-    h = Convolution2D(nch / 2, k, k, border_mode='same', W_regularizer=reg())(h)
-    h = SpatialDropout2D(dropout)(h)
+    h = Convolution2D(units / 2, k, k, border_mode='same', W_regularizer=reg())(h)
+    #h = SpatialDropout2D(dropout)(h)
     h = MaxPooling2D(pool_size=(2, 2))(h)
     h = LeakyReLU(0.2)(h)
-    h = Convolution2D(nch / 2, k, k, border_mode='same', W_regularizer=reg())(h)
-    h = SpatialDropout2D(dropout)(h)
+    h = Convolution2D(units / 2, k, k, border_mode='same', W_regularizer=reg())(h)
+    #h = SpatialDropout2D(dropout)(h)
     h = MaxPooling2D(pool_size=(2, 2))(h)
     h = LeakyReLU(0.2)(h)
-    h = Convolution2D(nch, k, k, border_mode='same', W_regularizer=reg())(h)
-    h = SpatialDropout2D(dropout)(h)
+    h = Convolution2D(units, k, k, border_mode='same', W_regularizer=reg())(h)
+    #h = SpatialDropout2D(dropout)(h)
     h = LeakyReLU(0.2)(h)
     h = Flatten()(h)
     mu = Dense(latent_dim, name="encoder_mu", W_regularizer=reg())(h)
     log_sigma_sq = Dense(latent_dim, name="encoder_log_sigma_sq", W_regularizer=reg())(h)
-    z = merge([mu, log_sigma_sq], mode=lambda p: p[0] + K.random_normal(K.shape(p[0])) * K.exp(p[1] / 2),
-              output_shape=lambda p: p[0])
+    z = Lambda(lambda (_mu, _lss): _mu + K.random_normal(K.shape(_mu)) * K.exp(_lss / 2),
+              output_shape=lambda (_mu, _lss): _mu)([mu, log_sigma_sq])
     return Model(x, z, name="encoder")
 
 
-def model_discriminator(latent_dim, output_dim=1, hidden_dim=256, reg=lambda: l1l2(1e-7, 1e-7)):
+def model_discriminator(latent_dim, output_dim=1, units=256, reg=lambda: l1l2(1e-7, 1e-7)):
     z = Input((latent_dim,))
     h = z
     mode = 1
-    h = Dense(hidden_dim, name="discriminator_h1", W_regularizer=reg())(h)
-    h = BatchNormalization(mode=mode)(h)
+    h = Dense(units, name="discriminator_h1", W_regularizer=reg())(h)
+    #h = BatchNormalization(mode=mode)(h)
     h = LeakyReLU(0.2)(h)
-    h = Dense(hidden_dim, name="discriminator_h2", W_regularizer=reg())(h)
-    h = BatchNormalization(mode=mode)(h)
+    h = Dense(units, name="discriminator_h2", W_regularizer=reg())(h)
+    #h = BatchNormalization(mode=mode)(h)
     h = LeakyReLU(0.2)(h)
-    h = Dense(hidden_dim, name="discriminator_h3", W_regularizer=reg())(h)
-    h = BatchNormalization(mode=mode)(h)
+    h = Dense(units, name="discriminator_h3", W_regularizer=reg())(h)
+    #h = BatchNormalization(mode=mode)(h)
     h = LeakyReLU(0.2)(h)
     y = Dense(output_dim, name="discriminator_y", activation="sigmoid", W_regularizer=reg())(h)
     return Model(z, y)
@@ -94,18 +93,19 @@ def model_discriminator(latent_dim, output_dim=1, hidden_dim=256, reg=lambda: l1
 
 def example_aae(path, adversarial_optimizer):
     # z \in R^100
-    latent_dim = 100
+    latent_dim = 256
+    units = 512
     # x \in R^{28x28}
     input_shape = dim_ordering_shape((3, 32, 32))
 
     # generator (z -> x)
-    generator = model_generator(latent_dim)
+    generator = model_generator(latent_dim, units=units)
     # encoder (x ->z)
-    encoder = model_encoder(latent_dim, input_shape)
+    encoder = model_encoder(latent_dim, input_shape, units=units)
     # autoencoder (x -> x')
     autoencoder = Model(encoder.inputs, generator(encoder(encoder.inputs)))
     # discriminator (z -> y)
-    discriminator = model_discriminator(latent_dim)
+    discriminator = model_discriminator(latent_dim, units=units)
 
     # build AAE
     x = encoder.inputs[0]
@@ -128,10 +128,10 @@ def example_aae(path, adversarial_optimizer):
                              player_params=[generative_params, discriminator.trainable_weights],
                              player_names=["generator", "discriminator"])
     model.adversarial_compile(adversarial_optimizer=adversarial_optimizer,
-                              player_optimizers=[Adam(1e-4, decay=1e-4), Adam(1e-3, decay=1e-4)],
+                              player_optimizers=[Adam(3e-4, decay=1e-4), Adam(1e-3, decay=1e-4)],
                               loss={"yfake": "binary_crossentropy", "yreal": "binary_crossentropy",
                                     "xpred": "mean_squared_error"},
-                              compile_kwargs={"loss_weights": {"yfake": 1e-2, "yreal": 1e-2, "xpred": 1}})
+                              compile_kwargs={"loss_weights": {"yfake": 1e-3, "yreal": 1e-3, "xpred": 1e2}})
 
     # load mnist data
     xtrain, xtest = cifar10_data()
@@ -163,7 +163,7 @@ def example_aae(path, adversarial_optimizer):
     y = [xtrain, np.ones((n, 1)), np.zeros((n, 1)), xtrain, np.zeros((n, 1)), np.ones((n, 1))]
     ntest = xtest.shape[0]
     ytest = [xtest, np.ones((ntest, 1)), np.zeros((ntest, 1)), xtest, np.zeros((ntest, 1)), np.ones((ntest, 1))]
-    history = model.fit(x=xtrain, y=y, validation_data=(xtest, ytest),
+    history = fit(model, x=xtrain, y=y, validation_data=(xtest, ytest),
                         callbacks=[generator_cb, autoencoder_cb],
                         nb_epoch=100, batch_size=32)
 
