@@ -20,9 +20,9 @@ from mnist_utils import mnist_data
 
 def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1l2(1e-5, 1e-5)):
     return Sequential([
-        Dense(hidden_dim / 4, name="generator_h1", input_dim=latent_dim, W_regularizer=reg()),
+        Dense(int(hidden_dim / 4), name="generator_h1", input_dim=latent_dim, W_regularizer=reg()),
         LeakyReLU(0.2),
-        Dense(hidden_dim / 2, name="generator_h2", W_regularizer=reg()),
+        Dense(int(hidden_dim / 2), name="generator_h2", W_regularizer=reg()),
         LeakyReLU(0.2),
         Dense(hidden_dim, name="generator_h3", W_regularizer=reg()),
         LeakyReLU(0.2),
