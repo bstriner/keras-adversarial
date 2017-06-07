@@ -1,13 +1,10 @@
-# import os
-# os.environ["THEANO_FLAGS"] = "mode=FAST_COMPILE,device=cpu,floatX=float32"
-
 import matplotlib as mpl
 
 # This line allows mpl to run with no DISPLAY defined
 mpl.use('Agg')
 
-from keras.layers import Reshape, Flatten, SpatialDropout2D, Lambda
-from keras.layers import Input, merge
+from keras.layers import Reshape, Flatten, Lambda
+from keras.layers import Input
 from keras.layers.convolutional import UpSampling2D, MaxPooling2D
 from keras.models import Sequential, Model
 from keras.optimizers import Adam
@@ -15,7 +12,7 @@ import keras.backend as K
 import pandas as pd
 import numpy as np
 from keras_adversarial.image_grid_callback import ImageGridCallback
-from keras_adversarial.legacy import l1l2, Dense, BatchNormalization, fit, Convolution2D
+from keras_adversarial.legacy import l1l2, Dense, fit, Convolution2D
 from keras_adversarial import AdversarialModel, fix_names, n_choice
 from keras_adversarial import AdversarialOptimizerSimultaneous, normal_latent_sampling
 from cifar10_utils import cifar10_data
@@ -29,18 +26,18 @@ def model_generator(latent_dim, units=512, dropout=0.5, reg=lambda: l1l2(l1=1e-7
     h = 5
     model.add(Dense(units * 4 * 4, input_dim=latent_dim, W_regularizer=reg()))
     model.add(Reshape(dim_ordering_shape((units, 4, 4))))
-    #model.add(SpatialDropout2D(dropout))
+    # model.add(SpatialDropout2D(dropout))
     model.add(LeakyReLU(0.2))
     model.add(Convolution2D(units / 2, h, h, border_mode='same', W_regularizer=reg()))
-    #model.add(SpatialDropout2D(dropout))
+    # model.add(SpatialDropout2D(dropout))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
     model.add(Convolution2D(units / 2, h, h, border_mode='same', W_regularizer=reg()))
-    #model.add(SpatialDropout2D(dropout))
+    # model.add(SpatialDropout2D(dropout))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
     model.add(Convolution2D(units / 4, h, h, border_mode='same', W_regularizer=reg()))
-    #model.add(SpatialDropout2D(dropout))
+    # model.add(SpatialDropout2D(dropout))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
     model.add(Convolution2D(3, h, h, border_mode='same', W_regularizer=reg()))
@@ -52,25 +49,25 @@ def model_encoder(latent_dim, input_shape, units=512, reg=lambda: l1l2(l1=1e-7, 
     k = 5
     x = Input(input_shape)
     h = Convolution2D(units / 4, k, k, border_mode='same', W_regularizer=reg())(x)
-    #h = SpatialDropout2D(dropout)(h)
+    # h = SpatialDropout2D(dropout)(h)
     h = MaxPooling2D(pool_size=(2, 2))(h)
     h = LeakyReLU(0.2)(h)
     h = Convolution2D(units / 2, k, k, border_mode='same', W_regularizer=reg())(h)
-    #h = SpatialDropout2D(dropout)(h)
+    # h = SpatialDropout2D(dropout)(h)
     h = MaxPooling2D(pool_size=(2, 2))(h)
     h = LeakyReLU(0.2)(h)
     h = Convolution2D(units / 2, k, k, border_mode='same', W_regularizer=reg())(h)
-    #h = SpatialDropout2D(dropout)(h)
+    # h = SpatialDropout2D(dropout)(h)
     h = MaxPooling2D(pool_size=(2, 2))(h)
     h = LeakyReLU(0.2)(h)
     h = Convolution2D(units, k, k, border_mode='same', W_regularizer=reg())(h)
-    #h = SpatialDropout2D(dropout)(h)
+    # h = SpatialDropout2D(dropout)(h)
     h = LeakyReLU(0.2)(h)
     h = Flatten()(h)
     mu = Dense(latent_dim, name="encoder_mu", W_regularizer=reg())(h)
     log_sigma_sq = Dense(latent_dim, name="encoder_log_sigma_sq", W_regularizer=reg())(h)
     z = Lambda(lambda (_mu, _lss): _mu + K.random_normal(K.shape(_mu)) * K.exp(_lss / 2),
-              output_shape=lambda (_mu, _lss): _mu)([mu, log_sigma_sq])
+               output_shape=lambda (_mu, _lss): _mu)([mu, log_sigma_sq])
     return Model(x, z, name="encoder")
 
 
@@ -79,13 +76,13 @@ def model_discriminator(latent_dim, output_dim=1, units=256, reg=lambda: l1l2(1e
     h = z
     mode = 1
     h = Dense(units, name="discriminator_h1", W_regularizer=reg())(h)
-    #h = BatchNormalization(mode=mode)(h)
+    # h = BatchNormalization(mode=mode)(h)
     h = LeakyReLU(0.2)(h)
-    h = Dense(units, name="discriminator_h2", W_regularizer=reg())(h)
-    #h = BatchNormalization(mode=mode)(h)
+    h = Dense(units / 2, name="discriminator_h2", W_regularizer=reg())(h)
+    # h = BatchNormalization(mode=mode)(h)
     h = LeakyReLU(0.2)(h)
-    h = Dense(units, name="discriminator_h3", W_regularizer=reg())(h)
-    #h = BatchNormalization(mode=mode)(h)
+    h = Dense(units / 2, name="discriminator_h3", W_regularizer=reg())(h)
+    # h = BatchNormalization(mode=mode)(h)
     h = LeakyReLU(0.2)(h)
     y = Dense(output_dim, name="discriminator_y", activation="sigmoid", W_regularizer=reg())(h)
     return Model(z, y)
@@ -131,7 +128,7 @@ def example_aae(path, adversarial_optimizer):
                               player_optimizers=[Adam(3e-4, decay=1e-4), Adam(1e-3, decay=1e-4)],
                               loss={"yfake": "binary_crossentropy", "yreal": "binary_crossentropy",
                                     "xpred": "mean_squared_error"},
-                              compile_kwargs={"loss_weights": {"yfake": 1e-3, "yreal": 1e-3, "xpred": 1e2}})
+                              compile_kwargs={"loss_weights": {"yfake": 1e-1, "yreal": 1e-1, "xpred": 1e2}})
 
     # load mnist data
     xtrain, xtest = cifar10_data()
@@ -151,7 +148,6 @@ def example_aae(path, adversarial_optimizer):
         xsamples = dim_ordering_unfix(xsamples).reshape((10, 1, 3, 32, 32))
         samples = np.concatenate((xsamples, xgen), axis=1)
         samples = samples.transpose((0, 1, 3, 4, 2))
-        print("Samples: {}".format(samples.shape))
         return samples
 
     autoencoder_cb = ImageGridCallback(os.path.join(path, "autoencoded-epoch-{:03d}.png"), autoencoder_sampler,
@@ -164,8 +160,8 @@ def example_aae(path, adversarial_optimizer):
     ntest = xtest.shape[0]
     ytest = [xtest, np.ones((ntest, 1)), np.zeros((ntest, 1)), xtest, np.zeros((ntest, 1)), np.ones((ntest, 1))]
     history = fit(model, x=xtrain, y=y, validation_data=(xtest, ytest),
-                        callbacks=[generator_cb, autoencoder_cb],
-                        nb_epoch=100, batch_size=32)
+                  callbacks=[generator_cb, autoencoder_cb],
+                  nb_epoch=100, batch_size=32)
 
     # save history
     df = pd.DataFrame(history.history)
