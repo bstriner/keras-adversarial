@@ -115,7 +115,7 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
     if K.backend() == "tensorflow":
         callbacks.append(
             TensorBoard(log_dir=os.path.join(path, 'logs'), histogram_freq=0, write_graph=True, write_images=True))
-    history = fit(model, x=dim_ordering_fix(xtrain), y=y, validation_data=(dim_ordering_fix(xtest), ytest),
+    history = fit(model, x=xtrain, y=y, validation_data=(xtest, ytest),
                   callbacks=callbacks, nb_epoch=nb_epoch,
                   batch_size=32)
 
