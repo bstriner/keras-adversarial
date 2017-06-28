@@ -29,15 +29,15 @@ def model_generator():
     model.add(Dense(nch * 4 * 4, input_dim=100, W_regularizer=reg()))
     model.add(BatchNormalization(mode=0))
     model.add(Reshape(dim_ordering_shape((nch, 4, 4))))
-    model.add(Convolution2D(nch / 2, h, h, border_mode='same', W_regularizer=reg()))
+    model.add(Convolution2D(int(nch / 2), h, h, border_mode='same', W_regularizer=reg()))
     model.add(BatchNormalization(mode=0, axis=1))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
-    model.add(Convolution2D(nch / 2, h, h, border_mode='same', W_regularizer=reg()))
+    model.add(Convolution2D(int(nch / 2), h, h, border_mode='same', W_regularizer=reg()))
     model.add(BatchNormalization(mode=0, axis=1))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
-    model.add(Convolution2D(nch / 4, h, h, border_mode='same', W_regularizer=reg()))
+    model.add(Convolution2D(int(nch / 4), h, h, border_mode='same', W_regularizer=reg()))
     model.add(BatchNormalization(mode=0, axis=1))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
@@ -51,9 +51,9 @@ def model_discriminator():
     h = 5
     reg = lambda: l1l2(l1=1e-7, l2=1e-7)
 
-    c1 = Convolution2D(nch / 4, h, h, border_mode='same', W_regularizer=reg(),
+    c1 = Convolution2D(int(nch / 4), h, h, border_mode='same', W_regularizer=reg(),
                        input_shape=dim_ordering_shape((3, 32, 32)))
-    c2 = Convolution2D(nch / 2, h, h, border_mode='same', W_regularizer=reg())
+    c2 = Convolution2D(int(nch / 2), h, h, border_mode='same', W_regularizer=reg())
     c3 = Convolution2D(nch, h, h, border_mode='same', W_regularizer=reg())
     c4 = Convolution2D(1, h, h, border_mode='same', W_regularizer=reg())
 
@@ -115,7 +115,7 @@ def example_gan(adversarial_optimizer, path, opt_g, opt_d, nb_epoch, generator, 
     if K.backend() == "tensorflow":
         callbacks.append(
             TensorBoard(log_dir=os.path.join(path, 'logs'), histogram_freq=0, write_graph=True, write_images=True))
-    history = fit(model, x=dim_ordering_fix(xtrain), y=y, validation_data=(dim_ordering_fix(xtest), ytest),
+    history = fit(model, x=xtrain, y=y, validation_data=(xtest, ytest),
                   callbacks=callbacks, nb_epoch=nb_epoch,
                   batch_size=32)
 
