@@ -6,7 +6,7 @@ mpl.use('Agg')
 from keras.layers import Dense, Flatten, Input, merge, Dropout
 from keras.models import Model
 from keras.optimizers import Adam
-from keras.regularizers import l1, l1l2
+from keras_adversarial.legacy import l1l2
 import keras.backend as K
 import pandas as pd
 import numpy as np
@@ -19,7 +19,7 @@ from keras.layers import BatchNormalization, LeakyReLU
 import os
 
 
-def model_encoder(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-5), batch_norm_mode=0):
+def model_encoder(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1l2(1e-5, 0), batch_norm_mode=0):
     x = Input(input_shape, name="x")
     h = Flatten()(x)
     h = Dense(hidden_dim, name="encoder_h1", W_regularizer=reg())(h)
@@ -33,7 +33,7 @@ def model_encoder(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-5)
     h = LeakyReLU(0.2)(h)
     mu = Dense(latent_dim, name="encoder_mu", W_regularizer=reg())(h)
     log_sigma_sq = Dense(latent_dim, name="encoder_log_sigma_sq", W_regularizer=reg())(h)
-    z = merge([mu, log_sigma_sq], mode=lambda p: p[0] + K.random_normal(p[0].shape) * K.exp(p[1] / 2),
+    z = merge([mu, log_sigma_sq], mode=lambda p: p[0] + K.random_normal(K.shape(p[0])) * K.exp(p[1] / 2),
               output_shape=lambda x: x[0])
     return Model(x, z, name="encoder")
 
