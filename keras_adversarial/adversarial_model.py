@@ -6,6 +6,7 @@ from keras import optimizers
 from keras.models import Model
 
 from .adversarial_utils import fix_names, merge_updates
+from .legacy import keras_2
 
 
 class AdversarialModel(Model):
@@ -129,7 +130,10 @@ class AdversarialModel(Model):
 
     @property
     def constraints(self):
-        return list(itertools.chain.from_iterable(model.constraints for model in self.layers))
+        if keras_2:
+            return []
+        else:
+            return list(itertools.chain.from_iterable(model.constraints for model in self.layers))
 
     @property
     def updates(self):
@@ -152,13 +156,13 @@ class AdversarialModel(Model):
                 for model in self.layers))
 
             # returns loss and metrics. Updates weights at each call.
+            constraints = [{} for model in self.layers] if keras_2 else [model.constraints for model in self.layers]
             self.train_function = self.adversarial_optimizer.make_train_function(inputs, outputs,
                                                                                  [model.total_loss for model in
                                                                                   self.layers],
                                                                                  self.player_params,
                                                                                  self.optimizers,
-                                                                                 [model.constraints for model in
-                                                                                  self.layers],
+                                                                                 constraints,
                                                                                  self.updates,
                                                                                  self._function_kwargs)
 

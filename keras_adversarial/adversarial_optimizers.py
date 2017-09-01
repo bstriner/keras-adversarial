@@ -2,6 +2,8 @@ from abc import ABCMeta, abstractmethod
 
 import keras.backend as K
 
+from .legacy import get_updates
+
 
 class AdversarialOptimizer(object):
     __metaclass__ = ABCMeta
@@ -94,7 +96,7 @@ class AdversarialOptimizerScheduled(object):
                             function_kwargs):
         funcs = []
         for loss, param, optimizer, constraint in zip(losses, params, optimizers, constraints):
-            updates = optimizer.get_updates(param, constraint, loss)
+            updates = get_updates(optimizer=optimizer, params=param, constraints=constraint, loss=loss)
             funcs.append(K.function(inputs, outputs, updates=updates + model_updates, **function_kwargs))
 
         def train(_inputs):
