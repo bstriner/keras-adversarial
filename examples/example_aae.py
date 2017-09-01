@@ -9,7 +9,7 @@ mpl.use('Agg')
 from keras.layers import Dense, Reshape, Flatten, Input, merge
 from keras.models import Sequential, Model
 from keras.optimizers import Adam
-from keras.regularizers import l1, l1l2
+from keras_adversarial.legacy import l1l2
 import keras.backend as K
 import pandas as pd
 import numpy as np
@@ -22,7 +22,7 @@ from keras.layers import LeakyReLU, Activation
 import os
 
 
-def model_generator(latent_dim, input_shape, hidden_dim=512, reg=lambda: l1(1e-7)):
+def model_generator(latent_dim, input_shape, hidden_dim=512, reg=lambda: l1l2(1e-7, 0)):
     return Sequential([
         Dense(hidden_dim, name="generator_h1", input_dim=latent_dim, W_regularizer=reg()),
         LeakyReLU(0.2),
@@ -34,7 +34,7 @@ def model_generator(latent_dim, input_shape, hidden_dim=512, reg=lambda: l1(1e-7
         name="generator")
 
 
-def model_encoder(latent_dim, input_shape, hidden_dim=512, reg=lambda: l1(1e-7)):
+def model_encoder(latent_dim, input_shape, hidden_dim=512, reg=lambda: l1l2(1e-7, 0)):
     x = Input(input_shape, name="x")
     h = Flatten()(x)
     h = Dense(hidden_dim, name="encoder_h1", W_regularizer=reg())(h)
