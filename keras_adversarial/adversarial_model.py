@@ -55,13 +55,14 @@ class AdversarialModel(Model):
             assert (len(player_models) == self.player_count)
             self.layers = player_models
 
-    def adversarial_compile(self, adversarial_optimizer, player_optimizers, loss, compile_kwargs={},
+    def adversarial_compile(self, adversarial_optimizer, player_optimizers, loss, player_compile_kwargs=[],
                             **kwargs):
         """
         Configures the learning process.
         :param adversarial_optimizer: instance of AdversarialOptimizer
         :param player_optimizers: list of optimizers for each player
         :param loss: loss function or function name
+        :param player_compile_kwargs: list of additional arguments to model compilation for each player
         :param kwargs: additional arguments to function compilation
         :return:
         """
@@ -74,7 +75,8 @@ class AdversarialModel(Model):
         self.optimizer = None
 
         # Build player models
-        for opt, model in zip(self.optimizers, self.layers):
+        for opt, model, compile_kwargs in itertools.zip_longest(
+                self.optimizers, self.layers, player_compile_kwargs, fillvalue={}):
             model.compile(opt, loss=self.loss, **compile_kwargs)
 
         self.train_function = None
