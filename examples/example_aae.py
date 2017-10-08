@@ -99,7 +99,7 @@ def example_aae(path, adversarial_optimizer):
                               player_optimizers=[Adam(1e-4, decay=1e-4), Adam(1e-3, decay=1e-4)],
                               loss={"yfake": "binary_crossentropy", "yreal": "binary_crossentropy",
                                     "xpred": "mean_squared_error"},
-                              player_compile_kwargs=[{"loss_weights": {"yfake": 1e-2, "yreal": 1e-2, "xpred": 1}}]*2)
+                              player_compile_kwargs=[{"loss_weights": {"yfake": 1e-2, "yreal": 1e-2, "xpred": 1}}] * 2)
 
     # load mnist data
     xtrain, xtest = mnist_data()
