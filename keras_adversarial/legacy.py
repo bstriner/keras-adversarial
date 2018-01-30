@@ -61,6 +61,6 @@ def AveragePooling2D(pool_size, border_mode='valid', **kwargs):
 
 def get_updates(optimizer, params, constraints, loss):
     if keras_2:
-        optimizer.get_updates(params=params, loss=loss)
+        return optimizer.get_updates(params, constraints, loss)
     else:
-        optimizer.get_updates(params, constraints, loss)
+        return optimizer.get_updates(params=params, loss=loss)
